@@ -25,17 +25,19 @@ excludes:
 
 resolutions:
   rule_violations:
-    - message: ".*io\\.github\\.mohamadjaara:core-crypto-kmp.*GPL-3\\.0-only.*"
+    - message: ".*core-crypto.*GPL-3\\.0-only.*"
       reason: "LICENSE_ACQUIRED_EXCEPTION"
       comment: |
-        natrium-demo is distributed under GPL-3.0-only. The Wire
-        core-crypto-kmp library is GPL-3.0-only by design and required
-        for end-to-end encryption. Inbound and outbound licenses match;
-        this is an expected and compliant configuration.
+        natrium is distributed under GPL-3.0-only. The Wire core-crypto
+        family of libraries is GPL-3.0-only by design and required for
+        end-to-end encryption. This includes both the official Wire
+        releases (com.wire:core-crypto-jvm, com.wire:core-crypto-android)
+        and the io.github.mohamadjaara:core-crypto-kmp-* multiplatform
+        wrapper used by KMP targets (kmp, android, iosarm64, macosarm64).
+        Inbound and outbound licenses match.
     - message: ".*com\\.wire:avs.*GPL-3\\.0-only.*"
       reason: "LICENSE_ACQUIRED_EXCEPTION"
       comment: |
-        natrium-demo is distributed under GPL-3.0-only. The Wire AVS
+        natrium is distributed under GPL-3.0-only. The Wire AVS
         (audio-video-signaling) library is GPL-3.0-only by design and
-        required for calling functionality. Inbound and outbound
-        licenses match; this is an expected and compliant configuration.
+        required for calling functionality.
