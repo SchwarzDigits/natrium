@@ -1,0 +1,41 @@
+# natrium Repository ORT Configuration
+#
+# This file overrides the central .ort.yml from SchwarzDigits/oss-compliance.
+
+excludes:
+  paths:
+    - pattern: "**/_benchmark/**"
+      reason: "TEST_OF"
+      comment: "Benchmark code, not part of the production build."
+    - pattern: "**/_examples/**"
+      reason: "EXAMPLE_OF"
+      comment: "Example code, not part of the production build."
+    - pattern: "**/_test/**"
+      reason: "TEST_OF"
+      comment: "Test code, not part of the production build."
+    - pattern: "**/testdata/**"
+      reason: "TEST_OF"
+      comment: "Test fixtures, not part of the production build."
+    - pattern: "**/fixtures/**"
+      reason: "TEST_OF"
+      comment: "Test fixtures, not part of the production build."
+    - pattern: "**/node_modules/**"
+      reason: "BUILD_TOOL_OF"
+      comment: "Vendored npm packages, will be re-resolved by the package manager."
+
+resolutions:
+  rule_violations:
+    - message: ".*io\\.github\\.mohamadjaara:core-crypto-kmp.*GPL-3\\.0-only.*"
+      reason: "LICENSE_ACQUIRED_EXCEPTION"
+      comment: |
+        natrium-demo is distributed under GPL-3.0-only. The Wire
+        core-crypto-kmp library is GPL-3.0-only by design and required
+        for end-to-end encryption. Inbound and outbound licenses match;
+        this is an expected and compliant configuration.
+    - message: ".*com\\.wire:avs.*GPL-3\\.0-only.*"
+      reason: "LICENSE_ACQUIRED_EXCEPTION"
+      comment: |
+        natrium-demo is distributed under GPL-3.0-only. The Wire AVS
+        (audio-video-signaling) library is GPL-3.0-only by design and
+        required for calling functionality. Inbound and outbound
+        licenses match; this is an expected and compliant configuration.
