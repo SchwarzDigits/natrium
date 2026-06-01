@@ -39,11 +39,5 @@ plugins {
 // See: https://youtrack.jetbrains.com/issue/KT-56536
 // rootProject.name = "natrium"
 
-includeBuild("kalium") {
-    dependencySubstitution {
-        substitute(module("com.wire:logic")).using(project(":logic"))
-    }
-}
-
 include("natrium-core")
 include("natrium-cli")

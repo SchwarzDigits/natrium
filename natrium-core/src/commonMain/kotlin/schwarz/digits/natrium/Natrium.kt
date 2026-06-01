@@ -292,6 +292,11 @@ object Natrium {
             }
         }
 
+        // Ensure this user is marked as current session (needed for re-login after logout,
+        // since addAuthenticatedAccount with UserAlreadyExists does not update the current session)
+        coreLogic.globalScope { session.updateCurrentSession(userId) }
+
+
         // Register cryptographic client
         val clientResult = withContext(Dispatchers.Default) {
             coreLogic.getSessionScope(userId).client.getOrRegister(
