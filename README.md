@@ -1,5 +1,7 @@
 # Natrium
 
+[![Maven Central](https://img.shields.io/maven-central/v/schwarz.opensource.natrium/natrium-core.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/schwarz.opensource.natrium/natrium-core)
+
 Natrium is a Kotlin Multiplatform library that wraps [Wire's Kalium SDK](https://github.com/wireapp/kalium) to provide a simplified API for secure citizen-to-government communication.
 
 Natrium is **not** a rewrite of Kalium. It is a thin facade that exposes only what partners need to build secure messaging clients.
@@ -10,7 +12,6 @@ Natrium is **not** a rewrite of Kalium. It is a thin facade that exposes only wh
 natrium/
   natrium-core/     KMP library (the SDK)
   natrium-cli/      JVM CLI app (Clikt), reference implementation
-  kalium/           Kalium Git submodule (do not edit)
   docs/             Architecture documentation
 ```
 
@@ -27,20 +28,22 @@ All shared code lives in `natrium-core/src/commonMain/` and must compile for all
 Prerequisites: JDK 17+, Android SDK (compileSdk 36).
 
 ```bash
-# Initialize the Kalium submodule
-git submodule update --init --recursive
-
 # Build all targets
 ./gradlew build
-
 ```
 
-To Update the Submodule
-```bash
-git submodule update --remote kalium
+## Usage
+
+Add `natrium-core` as a dependency from Maven Central:
+
+```kotlin
+// build.gradle.kts
+dependencies {
+    implementation("schwarz.opensource.natrium:natrium-core:<version>")
+}
 ```
 
-Kalium is included as a composite build via `includeBuild("kalium")` in `settings.gradle.kts`.
+See [natrium-core/README.md](natrium-core/README.md) for API usage and code examples.
 
 ## Documentation
 
