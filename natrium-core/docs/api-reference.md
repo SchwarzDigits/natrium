@@ -236,7 +236,7 @@ Values: `PENDING`, `APPROVED`, `REJECTED`
 |----------|--------|
 | `TextValue` | `value: String` |
 | `FileValue` | `fileLink: FileLink` |
-| `LocationValue` | `latitude: Double`, `longitude: Double`, `name: String?` |
+| `LocationValue` | `latitude: Float`, `longitude: Float`, `name: String?` |
 | `KnockValue` | `hotKnock: Boolean` |
 | `SystemValue` | `event: SystemEvent` |
 
@@ -376,7 +376,7 @@ All result types are sealed classes following the pattern `Success` / `Failure.*
 | `GetMembersResult` | `Success(members: List<ConversationMember>)` | `Failure.NotLoggedIn`, `Failure.Unknown(message, cause?)` |
 | `GetJoinLinkResult` | `Success(joinLink: JoinLink)` | `Failure.NotLoggedIn`, `Failure.Unknown(message, cause?)` |
 | `RevokeJoinLinkResult` | `Success` | `Failure.NotLoggedIn`, `Failure.Unknown(message, cause?)` |
-| `SendMessageResult` | `Success` | `Failure.NotLoggedIn`, `Failure.DisabledByTeam`, `Failure.RestrictedFileType`, `Failure.FileTooLarge(bytes, limit)`, `Failure.Unknown(message, cause?)` |
+| `SendMessageResult` | `Success` | `Failure.NotLoggedIn`, `Failure.DisabledByTeam`, `Failure.RestrictedFileType`, `Failure.FileTooLarge(fileSizeBytes: Long, limitBytes: Long)`, `Failure.Unknown(message, cause?)` |
 | `ChatHistoryResult` | `Success(messages: List<ChatMessage>)` | `Failure.NotLoggedIn`, `Failure.Unknown(message, cause?)` |
 | `FileDownloadResult` | `Success(filePath: Path)` | `Failure.NotLoggedIn`, `Failure.Unknown(message, cause?)` |
 | `ToggleReactionResult` | `Success` | `Failure.Unknown` |

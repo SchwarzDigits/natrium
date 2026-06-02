@@ -10,9 +10,8 @@ Natrium is **not** a rewrite of Kalium. It is a thin facade that exposes only wh
 
 ```
 natrium/
-  natrium-core/     KMP library (the SDK)
+  natrium-core/     KMP library (the SDK) — see natrium-core/docs/ for SDK documentation
   natrium-cli/      JVM CLI app (Clikt), reference implementation
-  docs/             Architecture documentation
 ```
 
 ## Targets
@@ -47,7 +46,10 @@ See [natrium-core/README.md](natrium-core/README.md) for API usage and code exam
 
 ## Documentation
 
-- [API Reference](docs/api-reference.md) -- all public types and methods
+- [Getting Started](natrium-core/docs/getting-started.md) — install, initialize, first login
+- [API Reference](natrium-core/docs/api-reference.md) — full public-type and method listing
+
+See [`natrium-core/README.md`](natrium-core/README.md) for the complete documentation index and design overview.
 
 ## License
 
