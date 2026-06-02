@@ -28,16 +28,21 @@ resolutions:
     - message: ".*core-crypto.*GPL-3\\.0-only.*"
       reason: "LICENSE_ACQUIRED_EXCEPTION"
       comment: |
-        natrium is distributed under GPL-3.0-only. The Wire core-crypto
+        natrium is distributed under EUPL-1.2. The Wire core-crypto
         family of libraries is GPL-3.0-only by design and required for
-        end-to-end encryption. This includes both the official Wire
-        releases (com.wire:core-crypto-jvm, com.wire:core-crypto-android)
-        and the io.github.mohamadjaara:core-crypto-kmp-* multiplatform
-        wrapper used by KMP targets (kmp, android, iosarm64, macosarm64).
-        Inbound and outbound licenses match.
+        end-to-end encryption. EUPL-1.2 lists GPL-3.0 as a Compatible
+        Licence in its Appendix (Article 5), so combined distribution
+        is permitted; per the EUPL compatibility clause, the resulting
+        combined work may be distributed under GPL-3.0 terms. This
+        includes both the official Wire releases
+        (com.wire:core-crypto-jvm, com.wire:core-crypto-android) and
+        the io.github.mohamadjaara:core-crypto-kmp-* multiplatform
+        wrapper used by KMP targets (kmp, android, iosarm64,
+        macosarm64).
     - message: ".*com\\.wire:avs.*GPL-3\\.0-only.*"
       reason: "LICENSE_ACQUIRED_EXCEPTION"
       comment: |
-        natrium is distributed under GPL-3.0-only. The Wire AVS
+        natrium is distributed under EUPL-1.2. The Wire AVS
         (audio-video-signaling) library is GPL-3.0-only by design and
-        required for calling functionality.
+        required for calling functionality. EUPL-1.2 is compatible
+        with GPL-3.0 via its Appendix (Article 5).

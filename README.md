@@ -48,5 +48,5 @@ Kalium is included as a composite build via `includeBuild("kalium")` in `setting
 
 ## License
 
-This project is licensed under the GNU General Public License v3.0.
+This project is licensed under the European Union Public Licence (EUPL) v1.2.
 See [LICENSE](LICENSE) for details.
