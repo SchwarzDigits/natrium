@@ -1,6 +1,6 @@
 # Conversations
 
-`ConversationManager` is the per-`Session` API for the conversation lifecycle: list, find, create, join. Per-conversation operations (members, title, archive, delete, join links) live on `ConversationOperations`. Messaging itself is documented in [messaging.md](./messaging.md).
+`ConversationManager` is the per-`Session` API for the conversation lifecycle: list, find, create, join. Per-conversation operations (members, title, delete, join links) live on `ConversationOperations`. Messaging itself is documented in [messaging.md](./messaging.md).
 
 > Prerequisite: you have a `Session`. See [authentication.md](./authentication.md).
 
@@ -25,17 +25,9 @@ val cancellable = session.conversationManager.observeConversations { conversatio
 }
 ```
 
-The listener receives a fresh `Collection<ConversationOperations>` snapshot every time the underlying state changes (new conversation, member joined, title renamed, archive toggled). Each emission is a freshly constructed snapshot — the SDK does not promise that the `ConversationOperations` instance for a given conversation is the same across emissions. Derive any per-conversation state (title, archive flag, etc.) from the entries themselves (e.g. by calling `getConversationInfo()` per entry) instead of caching state keyed by instance identity.
+The listener receives a fresh `Collection<ConversationOperations>` snapshot every time the underlying state changes (new conversation, member joined, title renamed). Each emission is a freshly constructed snapshot — the SDK does not promise that the `ConversationOperations` instance for a given conversation is the same across emissions. Derive any per-conversation state (title, etc.) from the entries themselves (e.g. by calling `getConversationInfo()` per entry) instead of caching state keyed by instance identity.
 
 Cancel when the consumer is gone (typical `ViewModel.onCleared()` or Compose `DisposableEffect.onDispose`).
-
-Archived conversations have their own observer:
-
-```kotlin
-val cancellable = session.conversationManager.observeArchivedConversations { archived ->
-    // archived ones don't appear in observeConversations
-}
-```
 
 ### One-shot snapshot
 
@@ -51,8 +43,6 @@ when (val result = session.conversationManager.listConversations()) {
         showError(result.message)
 }
 ```
-
-`listArchivedConversations()` mirrors this shape.
 
 ## 3. Finding a single conversation
 
@@ -135,13 +125,13 @@ session.conversationManager.joinConversation(link, password = "swordfish")
 | Metadata  | `getConversationInfo()`, `setTitle(title)` |
 | Members   | `getMembers()`, `addMember(userId)`, `removeMember(userId)` |
 | Sharing   | `getJoinLink(password?)`, `revokeJoinLink()` |
-| Lifecycle | `archive()`, `unarchive()`, `delete()` |
+| Lifecycle | `delete()` |
 
 ### 6a. Metadata
 
 ```kotlin
 val info = (ops.getConversationInfo() as? GetConversationInfoResult.Success)?.conversationInfo
-// ConversationInfo(id, title, isArchived)
+// ConversationInfo(id, title)
 
 when (val r = ops.setTitle("New Title")) {
     SetTitleResult.Success              -> Unit
@@ -206,21 +196,9 @@ when (val r = ops.revokeJoinLink()) {
 
 If a guest-room link already exists on the backend, the SDK returns the cached value; to invalidate it use `revokeJoinLink()` and call `getJoinLink(...)` again.
 
-### 6d. Archive / unarchive / delete
+### 6d. Delete
 
 ```kotlin
-when (val r = ops.archive()) {
-    ArchiveConversationResult.Success             -> Unit
-    ArchiveConversationResult.Failure.NotLoggedIn -> redirectToLogin()
-    is ArchiveConversationResult.Failure.Unknown  -> showError(r.message)
-}
-
-when (val r = ops.unarchive()) {
-    UnarchiveConversationResult.Success             -> Unit
-    UnarchiveConversationResult.Failure.NotLoggedIn -> redirectToLogin()
-    is UnarchiveConversationResult.Failure.Unknown  -> showError(r.message)
-}
-
 when (val r = ops.delete()) {
     DeleteConversationResult.Success             -> Unit
     DeleteConversationResult.Failure.NotLoggedIn -> redirectToLogin()
@@ -228,7 +206,7 @@ when (val r = ops.delete()) {
 }
 ```
 
-`observeConversations` and `observeArchivedConversations` are sourced from the same Kalium observation with `fromArchive = false` vs `fromArchive = true`, so toggling `archive()`/`unarchive()` shifts a conversation between the two streams. `delete()` calls Kalium's `deleteTeamConversation` use case; the visibility and persistence consequences for the current user, the conversation, and other members are determined by Kalium and the backend.
+`delete()` calls Kalium's `deleteTeamConversation` use case; the visibility and persistence consequences for the current user, the conversation, and other members are determined by Kalium and the backend.
 
 ## 7. Putting it together
 
@@ -247,7 +225,6 @@ class InboxViewModel(private val session: Session) : ViewModel() {
                 ConversationItem(
                     operations = c,
                     title      = info?.title ?: "(unknown)",
-                    isArchived = info?.isArchived ?: false,
                 )
             }
         }
@@ -269,7 +246,6 @@ class InboxViewModel(private val session: Session) : ViewModel() {
 data class ConversationItem(
     val operations: ConversationOperations,
     val title: String,
-    val isArchived: Boolean,
 )
 ```
 

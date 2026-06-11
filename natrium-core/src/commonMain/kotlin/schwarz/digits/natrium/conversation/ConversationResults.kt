@@ -87,22 +87,6 @@ sealed class SetTitleResult {
     }
 }
 
-sealed class ArchiveConversationResult {
-    data object Success : ArchiveConversationResult()
-    sealed class Failure : ArchiveConversationResult() {
-        data object NotLoggedIn : Failure()
-        data class Unknown(val message: String, val cause: Throwable? = null) : Failure()
-    }
-}
-
-sealed class UnarchiveConversationResult {
-    data object Success : UnarchiveConversationResult()
-    sealed class Failure : UnarchiveConversationResult() {
-        data object NotLoggedIn : Failure()
-        data class Unknown(val message: String, val cause: Throwable? = null) : Failure()
-    }
-}
-
 sealed class DeleteConversationResult {
     data object Success : DeleteConversationResult()
     sealed class Failure : DeleteConversationResult() {

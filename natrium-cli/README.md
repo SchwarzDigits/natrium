@@ -4,7 +4,7 @@ The Natrium CLI is a JVM command-line client that uses the Natrium SDK (and inte
 
 - **Log in / log out** against a Wire backend
 - Display the **current session status**
-- **Create, list, delete, and archive conversations**
+- **Create, list, and delete conversations**
 - **Add / remove members** to/from conversations
 - **Generate and use join links**
 - **Send and receive chat messages** within a conversation
@@ -137,14 +137,6 @@ Deletes a conversation.
 ```
 
 - `--id`: Conversation ID in format `value@domain`
-
-### `conversation-archive`
-
-Archives a conversation.
-
-```bash
-./gradlew :natrium-cli:run --args "conversation-archive --id 'abc-123@wire.com'"
-```
 
 ### `conversation-members`
 

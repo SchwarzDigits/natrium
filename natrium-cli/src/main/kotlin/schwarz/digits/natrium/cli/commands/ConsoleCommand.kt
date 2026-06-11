@@ -24,7 +24,6 @@ import schwarz.digits.natrium.devices.DeviceLimitResolver
 import schwarz.digits.natrium.devices.ListDevicesResult
 import schwarz.digits.natrium.devices.RemoveDeviceResult
 import schwarz.digits.natrium.conversation.AddMemberResult
-import schwarz.digits.natrium.conversation.ArchiveConversationResult
 import schwarz.digits.natrium.conversation.ConversationId
 import schwarz.digits.natrium.conversation.ConversationListResult
 import schwarz.digits.natrium.conversation.ConversationOperations
@@ -81,7 +80,6 @@ class ConsoleCommand : CliktCommand(name = "console") {
                     "update-display-name" -> handleUpdateDisplayName(args)
                     "conversations" -> handleConversations()
                     "conversation-create" -> handleCreateConversation(args)
-                    "conversation-archive" -> handleArchiveConversation(args)
                     "conversation-members" -> handleConversationMembers(args)
                     "conversation-add-person" -> handleAddPerson(args)
                     "conversation-remove-person" -> handleRemovePerson(args)
@@ -112,7 +110,6 @@ class ConsoleCommand : CliktCommand(name = "console") {
             |  update-display-name <name>  Update your display name
             |  conversations                List conversations
             |  conversation-create <title>  Create a new conversation
-            |  conversation-archive <id>    Archive conversation
             |  conversation-members <id>    Show participants
             |  conversation-add-person <conversation-id> <user-id>     Add member
             |  conversation-remove-person <conversation-id> <user-id>  Remove member
@@ -326,8 +323,7 @@ class ConsoleCommand : CliktCommand(name = "console") {
                         when (val infoResult = conversationOps.getConversationInfo()) {
                             is GetConversationInfoResult.Success -> {
                                 val info = infoResult.conversationInfo
-                                val status = if (info.isArchived) "archived" else "active"
-                                echo("  ${index + 1}. ${info.title.padEnd(40)} [$status]   ID: ${info.id}")
+                                echo("  ${index + 1}. ${info.title.padEnd(40)}   ID: ${info.id}")
                             }
                             is GetConversationInfoResult.Failure -> {
                                 echo("  ${index + 1}. (could not load conversation info)")
@@ -360,17 +356,6 @@ class ConsoleCommand : CliktCommand(name = "console") {
             is CreateConversationResult.Failure.Forbidden -> echo("Permission denied")
             is CreateConversationResult.Failure.InvalidTitle -> echo("Invalid title: ${result.message}")
             is CreateConversationResult.Failure.Unknown -> echo("Error: ${result.message}")
-        }
-    }
-
-    private suspend fun handleArchiveConversation(args: String) {
-        if (args.isBlank()) { echo("Usage: conversation-archive <id>"); return }
-        val s = requireSession() ?: return
-        val conversationOps = findConversationOps(s, args) ?: return
-        when (val result = conversationOps.archive()) {
-            is ArchiveConversationResult.Success -> echo("Conversation archived")
-            is ArchiveConversationResult.Failure.NotLoggedIn -> echo("Not logged in")
-            is ArchiveConversationResult.Failure.Unknown -> echo("Error: ${result.message}")
         }
     }
 

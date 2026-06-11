@@ -21,7 +21,6 @@ import com.wire.kalium.logic.data.conversation.Conversation
 import com.wire.kalium.logic.data.id.QualifiedID
 import com.wire.kalium.logic.feature.UserSessionScope
 import com.wire.kalium.logic.feature.conversation.AddMemberToConversationUseCase
-import com.wire.kalium.logic.feature.conversation.ArchiveStatusUpdateResult
 import com.wire.kalium.logic.feature.conversation.ObserveConversationDetailsUseCase
 import com.wire.kalium.logic.feature.conversation.RemoveMemberFromConversationUseCase
 import com.wire.kalium.logic.feature.conversation.RenamingResult
@@ -185,7 +184,7 @@ internal class ConversationOperationsImpl(
             is ObserveConversationDetailsUseCase.Result.Success -> {
                 val conv = details.conversationDetails.conversation
                 GetConversationInfoResult.Success(
-                    ConversationInfo(id = conversationId, title = conv.name ?: "", isArchived = conv.archived)
+                    ConversationInfo(id = conversationId, title = conv.name ?: "")
                 )
             }
             is ObserveConversationDetailsUseCase.Result.Failure ->
@@ -201,22 +200,6 @@ internal class ConversationOperationsImpl(
         else SetTitleResult.Failure.Unknown("Rename failed")
     } catch (e: Exception) {
         SetTitleResult.Failure.Unknown(e.message ?: "Unknown error", e)
-    }
-
-    override suspend fun archive(): ArchiveConversationResult = try {
-        val result = sessionScope.conversations.updateConversationArchivedStatus(convId(), true, onlyLocally = false)
-        if (result is ArchiveStatusUpdateResult.Success) ArchiveConversationResult.Success
-        else ArchiveConversationResult.Failure.Unknown("Archive failed")
-    } catch (e: Exception) {
-        ArchiveConversationResult.Failure.Unknown(e.message ?: "Unknown error", e)
-    }
-
-    override suspend fun unarchive(): UnarchiveConversationResult = try {
-        val result = sessionScope.conversations.updateConversationArchivedStatus(convId(), false, onlyLocally = false)
-        if (result is ArchiveStatusUpdateResult.Success) UnarchiveConversationResult.Success
-        else UnarchiveConversationResult.Failure.Unknown("Unarchive failed")
-    } catch (e: Exception) {
-        UnarchiveConversationResult.Failure.Unknown(e.message ?: "Unknown error", e)
     }
 
     override suspend fun delete(): DeleteConversationResult {

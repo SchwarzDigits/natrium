@@ -37,9 +37,5 @@ interface ConversationOperations {
 
     suspend fun setTitle(title: String): SetTitleResult
 
-    suspend fun archive(): ArchiveConversationResult
-
-    suspend fun unarchive(): UnarchiveConversationResult
-
     suspend fun delete(): DeleteConversationResult
 }

@@ -41,8 +41,7 @@ class ConversationsCommand : CliktCommand(name = "conversations") {
                         when (val infoResult = conversationOps.getConversationInfo()) {
                             is GetConversationInfoResult.Success -> {
                                 val info = infoResult.conversationInfo
-                                val status = if (info.isArchived) "archived" else "active"
-                                echo("  ${index + 1}. ${info.title.padEnd(40)} [$status]   ID: ${info.id}")
+                                echo("  ${index + 1}. ${info.title.padEnd(40)}   ID: ${info.id}")
                             }
                             is GetConversationInfoResult.Failure -> {
                                 echo("  ${index + 1}. (could not load conversation info)")
