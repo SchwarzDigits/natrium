@@ -31,7 +31,7 @@ All public API lives in `commonMain`.
 
 After `Natrium.login(...)` you hold a `Session` that exposes:
 
-- **`conversationManager`** — list, find, create, and join conversations; per-conversation operations (members, title, archive, join links, delete).
+- **`conversationManager`** — list, find, create, and join conversations; per-conversation operations (members, title, join links, delete).
 - **`chat()`** on each conversation — send/receive text and files, replies, reactions, typing indicators, message history.
 - **`deviceManager`** — list and remove the user's registered devices.
 
@@ -49,7 +49,7 @@ After `Natrium.login(...)` you hold a `Session` that exposes:
 | [Getting Started](./docs/getting-started.md) | Install the dependency, initialize Natrium, perform a first login. |
 | [Concepts](./docs/concepts.md) | Object hierarchy, the callback+`Cancellable` pattern, sealed result types, lifecycle, threading, storage. |
 | [Authentication](./docs/authentication.md) | Email/password login, 2FA, SSO (email-initiated and direct-code), session restoration, auth events, logout, profile updates, device-limit recovery. |
-| [Conversations](./docs/conversations.md) | List, find, create, join, archive, delete conversations; members; join links. |
+| [Conversations](./docs/conversations.md) | List, find, create, join, delete conversations; members; join links. |
 | [Messaging](./docs/messaging.md) | Text, files, replies, reactions, observing messages and typing, file downloads, history, system events. |
 | [Platforms](./docs/platforms.md) | Android, iOS, and JVM specifics — storage locations, lifecycle wiring, user-agent. |
 | [API Reference](./docs/api-reference.md) | Full method/parameter/result-type listing — the source of truth for signatures. |

@@ -22,7 +22,6 @@ import schwarz.digits.natrium.LogLevel
 import schwarz.digits.natrium.Natrium
 import schwarz.digits.natrium.NatriumPlatform
 import schwarz.digits.natrium.cli.commands.AuthEventsCommand
-import schwarz.digits.natrium.cli.commands.ArchiveConversationCommand
 import schwarz.digits.natrium.cli.commands.ConversationAddPersonCommand
 import schwarz.digits.natrium.cli.commands.ConversationDeleteCommand
 import schwarz.digits.natrium.cli.commands.ConversationJoinLinkCommand
@@ -70,7 +69,6 @@ class NatriumCLI : CliktCommand(name = "natrium") {
             UpdateEmailCommand(),
             ConversationsCommand(),
             CreateConversationCommand(),
-            ArchiveConversationCommand(),
             ConversationAddPersonCommand(),
             ConversationRemovePersonCommand(),
             ConversationMembersCommand(),

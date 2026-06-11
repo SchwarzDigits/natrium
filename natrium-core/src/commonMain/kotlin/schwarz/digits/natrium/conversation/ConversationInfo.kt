@@ -20,5 +20,4 @@ package schwarz.digits.natrium.conversation
 data class ConversationInfo(
     val id: ConversationId,
     val title: String,
-    val isArchived: Boolean = false,
 )

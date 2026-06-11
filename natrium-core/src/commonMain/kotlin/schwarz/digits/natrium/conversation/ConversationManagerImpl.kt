@@ -33,14 +33,10 @@ import schwarz.digits.natrium.Cancellable
 internal class ConversationManagerImpl(private val sessionScope: UserSessionScope, private val coroutineScope: CoroutineScope) : ConversationManager {
 
     override fun observeConversations(listener: (Collection<ConversationOperations>) -> Unit): Cancellable {
-      return internalObserve(listener, false)
-    }
-
-    private fun internalObserve(listener: (Collection<ConversationOperations>) -> Unit, fromArchive: Boolean) : Cancellable{
         val job = coroutineScope.launch {
             sessionScope.conversations
                 .observeConversationListDetailsWithEvents(
-                    fromArchive = fromArchive,
+                    fromArchive = false,
                     conversationFilter = ConversationFilter.All,
                     strictMlsFilter = false,
                 )
@@ -52,10 +48,6 @@ internal class ConversationManagerImpl(private val sessionScope: UserSessionScop
                 }
         }
         return Cancellable(job)
-    }
-
-    override fun observeArchivedConversations(listener: (Collection<ConversationOperations>) -> Unit): Cancellable {
-        return internalObserve(listener, true)
     }
 
     override suspend fun findConversation(id: ConversationId): FindConversationResult {
@@ -72,16 +64,8 @@ internal class ConversationManagerImpl(private val sessionScope: UserSessionScop
     }
 
     override suspend fun listConversations(): ConversationListResult {
-       return internalListConversations(false)
-    }
-
-    override suspend fun listArchivedConversations(): ConversationListResult {
-        return internalListConversations(true)
-    }
-
-    private suspend fun internalListConversations(fromArchive: Boolean): ConversationListResult {
         return try {
-            val allDetails = sessionScope.conversations.observeConversationListDetails(fromArchive = fromArchive).first()
+            val allDetails = sessionScope.conversations.observeConversationListDetails(fromArchive = false).first()
             val conversations = allDetails.map { ConversationOperationsImpl(it.conversation.id, sessionScope, coroutineScope) }
             ConversationListResult.Success(conversations = conversations)
         } catch (e: Exception) {

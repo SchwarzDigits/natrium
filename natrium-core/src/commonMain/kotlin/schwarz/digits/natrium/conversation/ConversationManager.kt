@@ -21,11 +21,9 @@ import schwarz.digits.natrium.Cancellable
 
 interface ConversationManager {
     fun observeConversations(listener: (Collection<ConversationOperations>) -> Unit): Cancellable
-    fun observeArchivedConversations(listener: (Collection<ConversationOperations>) -> Unit): Cancellable
 
     suspend fun listConversations() : ConversationListResult
 
-    suspend fun listArchivedConversations(): ConversationListResult
     suspend fun findConversation(id: ConversationId): FindConversationResult
 
     suspend fun createConversation(title: String): CreateConversationResult
