@@ -76,9 +76,7 @@ Observe via `Natrium.observeAuthEvents(listener)`. Emitted on login and logout e
 | Method | Parameters | Returns |
 |--------|-----------|---------|
 | `fun observeConversations(listener)` | `listener: (Collection<ConversationOperations>) -> Unit` | `Cancellable` |
-| `fun observeArchivedConversations(listener)` | `listener: (Collection<ConversationOperations>) -> Unit` | `Cancellable` |
 | `suspend fun listConversations()` | — | `ConversationListResult` |
-| `suspend fun listArchivedConversations()` | — | `ConversationListResult` |
 | `suspend fun findConversation(id)` | `id: ConversationId` | `FindConversationResult` |
 | `suspend fun createConversation(title)` | `title: String` | `CreateConversationResult` |
 | `suspend fun joinConversation(joinLink, password?)` | `joinLink: JoinLink`, `password: String? = null` | `JoinConversationResult` |
@@ -99,8 +97,6 @@ Observe via `Natrium.observeAuthEvents(listener)`. Emitted on login and logout e
 | `suspend fun revokeJoinLink()` | — | `RevokeJoinLinkResult` |
 | `suspend fun getConversationInfo()` | — | `GetConversationInfoResult` |
 | `suspend fun setTitle(title)` | `title: String` | `SetTitleResult` |
-| `suspend fun archive()` | — | `ArchiveConversationResult` |
-| `suspend fun unarchive()` | — | `UnarchiveConversationResult` |
 | `suspend fun delete()` | — | `DeleteConversationResult` |
 
 ---
@@ -158,7 +154,6 @@ See [BackendConfig](#backendconfig) section above.
 |-------|------|
 | `id` | `ConversationId` |
 | `title` | `String` |
-| `isArchived` | `Boolean` |
 
 ### ConversationId
 `data class schwarz.digits.natrium.conversation.ConversationId`
@@ -236,7 +231,7 @@ Values: `PENDING`, `APPROVED`, `REJECTED`
 |----------|--------|
 | `TextValue` | `value: String` |
 | `FileValue` | `fileLink: FileLink` |
-| `LocationValue` | `latitude: Double`, `longitude: Double`, `name: String?` |
+| `LocationValue` | `latitude: Float`, `longitude: Float`, `name: String?` |
 | `KnockValue` | `hotKnock: Boolean` |
 | `SystemValue` | `event: SystemEvent` |
 
@@ -368,15 +363,13 @@ All result types are sealed classes following the pattern `Success` / `Failure.*
 | `ConversationObserveResult` | `Success` | `Failure.NotLoggedIn`, `Failure.ConversationNotFound` |
 | `GetConversationInfoResult` | `Success(conversationInfo: ConversationInfo)` | `Failure.NotLoggedIn`, `Failure.Unknown(message, cause?)` |
 | `SetTitleResult` | `Success` | `Failure.NotLoggedIn`, `Failure.Unknown(message, cause?)` |
-| `ArchiveConversationResult` | `Success` | `Failure.NotLoggedIn`, `Failure.Unknown(message, cause?)` |
-| `UnarchiveConversationResult` | `Success` | `Failure.NotLoggedIn`, `Failure.Unknown(message, cause?)` |
 | `DeleteConversationResult` | `Success` | `Failure.NotLoggedIn`, `Failure.Unknown(message, cause?)` |
 | `AddMemberResult` | `Success` | `Failure.NotLoggedIn`, `Failure.Unknown(message, cause?)` |
 | `RemoveMemberResult` | `Success` | `Failure.NotLoggedIn`, `Failure.Unknown(message, cause?)` |
 | `GetMembersResult` | `Success(members: List<ConversationMember>)` | `Failure.NotLoggedIn`, `Failure.Unknown(message, cause?)` |
 | `GetJoinLinkResult` | `Success(joinLink: JoinLink)` | `Failure.NotLoggedIn`, `Failure.Unknown(message, cause?)` |
 | `RevokeJoinLinkResult` | `Success` | `Failure.NotLoggedIn`, `Failure.Unknown(message, cause?)` |
-| `SendMessageResult` | `Success` | `Failure.NotLoggedIn`, `Failure.DisabledByTeam`, `Failure.RestrictedFileType`, `Failure.FileTooLarge(bytes, limit)`, `Failure.Unknown(message, cause?)` |
+| `SendMessageResult` | `Success` | `Failure.NotLoggedIn`, `Failure.DisabledByTeam`, `Failure.RestrictedFileType`, `Failure.FileTooLarge(fileSizeBytes: Long, limitBytes: Long)`, `Failure.Unknown(message, cause?)` |
 | `ChatHistoryResult` | `Success(messages: List<ChatMessage>)` | `Failure.NotLoggedIn`, `Failure.Unknown(message, cause?)` |
 | `FileDownloadResult` | `Success(filePath: Path)` | `Failure.NotLoggedIn`, `Failure.Unknown(message, cause?)` |
 | `ToggleReactionResult` | `Success` | `Failure.Unknown` |

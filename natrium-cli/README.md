@@ -4,7 +4,7 @@ The Natrium CLI is a JVM command-line client that uses the Natrium SDK (and inte
 
 - **Log in / log out** against a Wire backend
 - Display the **current session status**
-- **Create, list, delete, and archive conversations**
+- **Create, list, and delete conversations**
 - **Add / remove members** to/from conversations
 - **Generate and use join links**
 - **Send and receive chat messages** within a conversation
@@ -137,14 +137,6 @@ Deletes a conversation.
 ```
 
 - `--id`: Conversation ID in format `value@domain`
-
-### `conversation-archive`
-
-Archives a conversation.
-
-```bash
-./gradlew :natrium-cli:run --args "conversation-archive --id 'abc-123@wire.com'"
-```
 
 ### `conversation-members`
 
@@ -390,3 +382,11 @@ Natrium/Kalium stores accounts and session data under:
 ```text
 ~/.natrium
 ```
+
+## License
+
+Natrium wrapper code is licensed under the **EUPL v. 1.2 only**. The Kalium SDK
+used internally is **not** licensed under the EUPL; it may only be used under
+the GPL-3.0 or a commercial licence from Wire Swiss GmbH. See the
+[root README](../README.md#license), [LICENSE](../LICENSE), and
+[NOTICE](../NOTICE).

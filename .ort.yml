@@ -25,24 +25,31 @@ excludes:
 
 resolutions:
   rule_violations:
+    - message: ".*(kalium|com\\.wire:logic|schwarz\\.opensource\\.natrium:logic).*GPL-3\\.0.*"
+      reason: "LICENSE_ACQUIRED_EXCEPTION"
+      comment: |
+        Natrium wrapper code is distributed under EUPL-1.2. The Kalium SDK
+        remains GPL-3.0 (or commercially licensed by Wire Swiss GmbH) and is
+        not relicensed under the EUPL. A commercial licence from Wire
+        authorises this combination without GPL copyleft extending to Natrium.
+        See NOTICE and README.
     - message: ".*core-crypto.*GPL-3\\.0-only.*"
       reason: "LICENSE_ACQUIRED_EXCEPTION"
       comment: |
-        natrium is distributed under EUPL-1.2. The Wire core-crypto
-        family of libraries is GPL-3.0-only by design and required for
-        end-to-end encryption. EUPL-1.2 lists GPL-3.0 as a Compatible
-        Licence in its Appendix (Article 5), so combined distribution
-        is permitted; per the EUPL compatibility clause, the resulting
-        combined work may be distributed under GPL-3.0 terms. This
-        includes both the official Wire releases
-        (com.wire:core-crypto-jvm, com.wire:core-crypto-android) and
-        the io.github.mohamadjaara:core-crypto-kmp-* multiplatform
-        wrapper used by KMP targets (kmp, android, iosarm64,
-        macosarm64).
+        Natrium wrapper code is distributed under EUPL-1.2. The Wire
+        core-crypto family of libraries is GPL-3.0-only by design and required
+        for end-to-end encryption. This includes both the official Wire
+        releases (com.wire:core-crypto-jvm, com.wire:core-crypto-android)
+        and the io.github.mohamadjaara:core-crypto-kmp-* multiplatform
+        wrapper used by KMP targets (kmp, android, iosarm64, macosarm64).
+        These components ship with Kalium, remain GPL-3.0, and are not
+        relicensed under the EUPL. A commercial licence from Wire authorises
+        this combination without GPL copyleft extending to Natrium.
     - message: ".*com\\.wire:avs.*GPL-3\\.0-only.*"
       reason: "LICENSE_ACQUIRED_EXCEPTION"
       comment: |
-        natrium is distributed under EUPL-1.2. The Wire AVS
+        Natrium wrapper code is distributed under EUPL-1.2. The Wire AVS
         (audio-video-signaling) library is GPL-3.0-only by design and
-        required for calling functionality. EUPL-1.2 is compatible
-        with GPL-3.0 via its Appendix (Article 5).
+        required for calling functionality. It remains GPL-3.0 and is not
+        relicensed under the EUPL. A commercial licence from Wire authorises
+        this combination without GPL copyleft extending to Natrium.

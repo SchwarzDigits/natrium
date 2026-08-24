@@ -1,8 +1,16 @@
 /*
  * Copyright (C) 2026 Schwarz Digits KG
  *
- * Licensed under the European Union Public Licence (EUPL) v1.2.
- * See the LICENSE file in the project root for the full licence text.
+ * Licensed under the EUPL v. 1.2 only.
+ * You may not use this work except in compliance with the Licence.
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Licence is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the Licence for the specific language governing
+ * permissions and limitations under the Licence.
  *
  * SPDX-License-Identifier: EUPL-1.2
  */
@@ -74,22 +82,6 @@ sealed class GetConversationInfoResult {
 sealed class SetTitleResult {
     data object Success : SetTitleResult()
     sealed class Failure : SetTitleResult() {
-        data object NotLoggedIn : Failure()
-        data class Unknown(val message: String, val cause: Throwable? = null) : Failure()
-    }
-}
-
-sealed class ArchiveConversationResult {
-    data object Success : ArchiveConversationResult()
-    sealed class Failure : ArchiveConversationResult() {
-        data object NotLoggedIn : Failure()
-        data class Unknown(val message: String, val cause: Throwable? = null) : Failure()
-    }
-}
-
-sealed class UnarchiveConversationResult {
-    data object Success : UnarchiveConversationResult()
-    sealed class Failure : UnarchiveConversationResult() {
         data object NotLoggedIn : Failure()
         data class Unknown(val message: String, val cause: Throwable? = null) : Failure()
     }
