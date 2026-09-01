@@ -1,0 +1,38 @@
+THIRD PARTY NOTICES
+===================
+
+This file lists the third-party components used by wire-avs, the author(s) and the
+licenses they are distributed under.
+
+------------------------------------------------------------------------------
+
+Apache-2.0
+----------
+  License text: https://www.apache.org/licenses/LICENSE-2.0.txt
+
+  openssl 286ddea; Copyright: OpenSSL Foundation
+
+Bouncy Castle Licence
+---------------------
+  License text: https://www.bouncycastle.org/licence.html
+
+  bcpkix-jdk18on 1.80
+  bcprov-jdk18on 1.80.2
+  bcutil-jdk18on 1.80.2
+
+BSD-3-Clause
+------------
+  License text: https://opensource.org/license/bsd-3-clause
+
+  re 7ef904a; Copyright: creytiv
+  rem 50de907; Copyright: creytiv
+  rew c9f9efe; Copyright: Wire Swiss GmbH <seceng@wire.com>
+  WebRTC 20260605.97; Copyright: The WebRTC project authors
+
+ISC
+---
+  License text: https://opensource.org/license/isc-license-txt
+
+  libsodium 77e1ce5; Copyright: Frank Denis <j at pureftpd dot org>
+
+------------------------------------------------------------------------------

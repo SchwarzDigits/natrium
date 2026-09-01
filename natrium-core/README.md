@@ -59,3 +59,13 @@ If you've never used Natrium before, read in this order: **Getting Started → C
 ## Related module
 
 [`natrium-cli`](../natrium-cli/README.md) is a JVM reference client built on `natrium-core` — useful for smoke-testing a backend or learning the API surface from a known-working consumer. It is not intended for production deployment.
+
+## License
+
+Natrium wrapper code is licensed under the **EUPL v. 1.2 only**. The Kalium SDK
+dependency is **not** licensed under the EUPL; it may only be used under the
+GPL-3.0 or a commercial licence from Wire Swiss GmbH. Linking Natrium with
+Kalium does not cause EUPL copyleft to extend to Kalium.
+
+See the [root README](../README.md#license), [LICENSE](../LICENSE), and
+[NOTICE](../NOTICE).
