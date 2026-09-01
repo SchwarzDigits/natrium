@@ -22,6 +22,23 @@ excludes:
     - pattern: "**/node_modules/**"
       reason: "BUILD_TOOL_OF"
       comment: "Vendored npm packages, will be re-resolved by the package manager."
+    - pattern: "third-party/**"
+      reason: "DOCUMENTATION_OF"
+      comment: |
+        Attribution records supplied by Wire Swiss GmbH for the components
+        compiled into the Wire CoreCrypto and Wire AVS binaries, reproduced
+        verbatim. These files are documentation, not source code, and no part
+        of them is built into or distributed with natrium.
+
+        They must be excluded from scanning: each one enumerates hundreds of
+        third-party components together with their licence names, so a scanner
+        reading them attributes every one of those licences to natrium itself.
+        That yields large numbers of spurious findings and, because the lists
+        include GPL-3.0 and MPL-2.0 entries, would trigger rule violations for
+        licences natrium does not actually carry.
+
+        The authoritative statement of what natrium depends on is the resolved
+        dependency graph, not these files.
 
 resolutions:
   rule_violations:
