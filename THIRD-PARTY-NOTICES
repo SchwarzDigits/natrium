@@ -39,7 +39,9 @@ These ship with the Kalium SDK, remain GPL-3.0, and are not relicensed
 under the EUPL (see NOTICE):
 
 - io.github.mohamadjaara:core-crypto-kmp 9.3.0.1-kmp — Wire CoreCrypto
-  (Kotlin Multiplatform packaging), Copyright (C) Wire Swiss GmbH — GPL-3.0
+  (Kotlin Multiplatform packaging), Copyright (C) Wire Swiss GmbH — GPL-3.0.
+  For the third-party components it brings in see
+  third-party/core-crypto/THIRD_PARTY_NOTICES.txt.
 
 Components licensed under the Apache License 2.0
 ------------------------------------------------
@@ -101,3 +103,14 @@ The list above reflects the JVM target. The Android and iOS targets of
 the Kalium SDK (for example com.wire:avs, GPL-3.0, and platform packagings
 of CoreCrypto and libsodium). These are to be completed from the SBOM
 provided by Wire Swiss GmbH.
+
+Native and binary components
+----------------------------
+
+Wire CoreCrypto and Wire AVS bring in components that do not appear in the
+dependency graph the list above was generated from. The notices supplied by
+Wire Swiss GmbH for those components are reproduced verbatim in this
+repository:
+
+- third-party/core-crypto/THIRD_PARTY_NOTICES.txt
+- third-party/wire-avs/THIRD_PARTY_NOTICES.txt
