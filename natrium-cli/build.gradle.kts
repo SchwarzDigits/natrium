@@ -55,7 +55,7 @@ val generateBackendConfig by tasks.registering {
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(21)
     sourceSets["main"].kotlin.srcDir(generateBackendConfig.map { it.outputs.files.singleFile })
 }
 

@@ -28,7 +28,7 @@ group = "schwarz.opensource.natrium"
 version = providers.gradleProperty("version").getOrElse("0.0.0-SNAPSHOT")
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(21)
 
     androidTarget()
     iosArm64()
@@ -37,7 +37,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation("schwarz.opensource.natrium:logic:0.0.2-fork.1")
+            implementation("com.wire.kalium:logic:0.0.7")
             api(libs.coroutines.core)
             implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.serialization.json)
@@ -68,8 +68,8 @@ android {
     compileSdk = 36
     defaultConfig { minSdk = 26 }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 }
 

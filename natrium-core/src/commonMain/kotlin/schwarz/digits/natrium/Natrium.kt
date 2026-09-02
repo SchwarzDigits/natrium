@@ -286,6 +286,10 @@ object Natrium {
                     return LoginResult.Failure.Error(LoginError.SESSION_COULD_NOT_BE_SAVED)
                 }
 
+                is AddAuthenticatedUserUseCase.Result.Failure.SsoIdentityChanged -> {
+                    return LoginResult.Failure.Error(LoginError.SESSION_COULD_NOT_BE_SAVED)
+                }
+
                 is AddAuthenticatedUserUseCase.Result.Failure.Generic -> {
                     return LoginResult.Failure.Error(LoginError.SESSION_COULD_NOT_BE_SAVED)
                 }
