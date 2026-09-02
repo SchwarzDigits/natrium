@@ -33,6 +33,8 @@ kotlin {
 For a JVM-only or Android-only consumer the same artifact coordinate works; Gradle will resolve the matching variant via Kotlin metadata.
 
 > **Note on the Kalium dependency**: `natrium-core` brings Wire's `kalium-logic` (published as `schwarz.opensource.natrium:logic`) in transitively. You do not need to depend on it directly.
+>
+> Kalium is **not** licensed under the EUPL. It may only be used under the GPL-3.0 or a commercial licence from Wire Swiss GmbH. Linking Natrium with Kalium does not cause EUPL copyleft to extend to Kalium. See the [root README](../../README.md#license) and [NOTICE](../../NOTICE).
 
 ## Initialize Natrium
 

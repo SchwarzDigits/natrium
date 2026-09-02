@@ -382,3 +382,11 @@ Natrium/Kalium stores accounts and session data under:
 ```text
 ~/.natrium
 ```
+
+## License
+
+Natrium wrapper code is licensed under the **EUPL v. 1.2 only**. The Kalium SDK
+used internally is **not** licensed under the EUPL; it may only be used under
+the GPL-3.0 or a commercial licence from Wire Swiss GmbH. See the
+[root README](../README.md#license), [LICENSE](../LICENSE), and
+[NOTICE](../NOTICE).
