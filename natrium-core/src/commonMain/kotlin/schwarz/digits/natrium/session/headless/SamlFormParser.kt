@@ -30,14 +30,14 @@ internal data class SamlForm(
  * binding — no full HTML engine is needed to reproduce it.
  */
 internal object SamlFormParser {
-
+    
     private val FORM_RE = Regex(
-        "<form\\b([^>]*)>(.*?)</form>",
-        setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL),
+        "<form\\b([^>]*)>([\\s\\S]*?)</form>",
+        RegexOption.IGNORE_CASE,
     )
     private val INPUT_RE = Regex(
         "<input\\b([^>]*?)/?>",
-        setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL),
+        RegexOption.IGNORE_CASE,
     )
 
     /** Returns the first form, or `null` if the document contains no `<form>`. */
