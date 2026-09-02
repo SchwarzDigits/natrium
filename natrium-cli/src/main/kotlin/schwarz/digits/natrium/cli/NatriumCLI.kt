@@ -35,6 +35,7 @@ import schwarz.digits.natrium.cli.commands.CreateConversationCommand
 import schwarz.digits.natrium.cli.commands.LoginCommand
 import schwarz.digits.natrium.cli.commands.LogoutCommand
 import schwarz.digits.natrium.cli.commands.SSOLoginCommand
+import schwarz.digits.natrium.cli.commands.SSOLoginHeadlessCommand
 import schwarz.digits.natrium.cli.commands.StatusCommand
 import schwarz.digits.natrium.cli.commands.UpdateDisplayNameCommand
 import schwarz.digits.natrium.cli.commands.UpdateEmailCommand
@@ -62,6 +63,7 @@ class NatriumCLI : CliktCommand(name = "natrium") {
         subcommands(
             LoginCommand(),
             SSOLoginCommand(),
+            SSOLoginHeadlessCommand(),
             StatusCommand(),
             LogoutCommand(),
             UpdateDisplayNameCommand(),

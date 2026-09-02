@@ -52,6 +52,10 @@ import schwarz.digits.natrium.session.SSOLoginError
 import schwarz.digits.natrium.session.SSOLoginResult
 import schwarz.digits.natrium.session.Session
 import schwarz.digits.natrium.session.SessionImpl
+import schwarz.digits.natrium.session.headless.HeadlessSsoDriver
+import schwarz.digits.natrium.session.headless.HeadlessSsoFailure
+import schwarz.digits.natrium.session.headless.HeadlessSsoInterceptor
+import schwarz.digits.natrium.session.headless.HeadlessSsoOutcome
 
 object Natrium {
 
@@ -204,7 +208,52 @@ object Natrium {
 
     suspend fun completeSSOLogin(cookie: String): LoginResult {
         val authScope = resolveAuthScope() ?: return LoginResult.Failure.Error(LoginError.CONNECTION_ERROR)
+        return completeWithCookie(authScope, cookie)
+    }
 
+    /**
+     * Browserless SSO: Natrium imitates the browser and drives the SAML redirect/POST chain
+     * itself, then exchanges the resulting cookie for a session. [interceptor] is invoked for
+     * every request to a non-Wire host (the external IdP component), letting the consumer inject
+     * the parameters that component needs to perform the login; Wire-internal requests are
+     * handled silently and never surfaced.
+     *
+     * Returns a regular [LoginResult] — handle it exactly like [login] / [completeSSOLogin],
+     * including the [LoginResult.Failure.TooManyDevices] branch. No browser, Custom Tab, web view
+     * or deep link is involved.
+     */
+    suspend fun ssoLoginHeadless(
+        ssoCode: String,
+        interceptor: HeadlessSsoInterceptor,
+    ): LoginResult {
+        val authScope = resolveAuthScope()
+            ?: return LoginResult.Failure.Error(LoginError.CONNECTION_ERROR)
+
+        val authorizationUrl = when (val initiate = initiateSSOLogin(authScope, ssoCode)) {
+            is SSOLoginResult.Success -> initiate.authorizationUrl
+            is SSOLoginResult.Failure.Error ->
+                return LoginResult.Failure.Error(initiate.reason.toLoginError())
+        }
+
+        val outcome = withContext(Dispatchers.Default) {
+            HeadlessSsoDriver(backendConfig.wireHosts).run(authorizationUrl, interceptor)
+        }
+
+        return when (outcome) {
+            is HeadlessSsoOutcome.Success -> completeWithCookie(authScope, outcome.cookie)
+            is HeadlessSsoOutcome.Failure -> LoginResult.Failure.Error(
+                when (outcome.reason) {
+                    HeadlessSsoFailure.NETWORK -> LoginError.CONNECTION_ERROR
+                    HeadlessSsoFailure.FLOW -> LoginError.LOGIN_FAILED
+                },
+            )
+        }
+    }
+
+    private suspend fun completeWithCookie(
+        authScope: AuthenticationScope,
+        cookie: String,
+    ): LoginResult {
         val sessionResult = withContext(Dispatchers.Default) {
             authScope.ssoLoginScope.getLoginSession(cookie)
         }
@@ -223,6 +272,15 @@ object Natrium {
             is SSOLoginSessionResult.Failure ->
                 LoginResult.Failure.Error(LoginError.LOGIN_FAILED)
         }
+    }
+
+    private fun SSOLoginError.toLoginError(): LoginError = when (this) {
+        SSOLoginError.SERVER_VERSION_NOT_SUPPORTED -> LoginError.SERVER_VERSION_NOT_SUPPORTED
+        SSOLoginError.APP_UPDATE_REQUIRED -> LoginError.APP_UPDATE_REQUIRED
+        SSOLoginError.CONNECTION_ERROR -> LoginError.CONNECTION_ERROR
+        SSOLoginError.SSO_NOT_AVAILABLE,
+        SSOLoginError.INVALID_CODE,
+        SSOLoginError.INVALID_CODE_FORMAT -> LoginError.LOGIN_FAILED
     }
 
     private suspend fun resolveAuthScope(): AuthenticationScope? {
