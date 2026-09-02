@@ -44,16 +44,6 @@ class SSOLoginHeadlessCommand : CliktCommand(name = "sso-login-headless") {
         help = "Stub IdP: injected as the ${StubIdpHeaders.USER_ID} header",
     )
 
-    private val stubEmail: String? by option(
-        "--email",
-        help = "Stub IdP: injected as the ${StubIdpHeaders.EMAIL} header",
-    )
-
-    private val displayName: String? by option(
-        "--display-name",
-        help = "Stub IdP: injected as the ${StubIdpHeaders.DISPLAY_NAME} header",
-    )
-
     private val queryParams: List<String> by option(
         "-q", "--query",
         help = "Inject a query parameter into external (IdP) requests: key=value (repeatable)",
@@ -79,8 +69,6 @@ class SSOLoginHeadlessCommand : CliktCommand(name = "sso-login-headless") {
             HeadlessSsoInjection.Builder()
                 .apply {
                     userId?.let { header(StubIdpHeaders.USER_ID, it) }
-                    stubEmail?.let { header(StubIdpHeaders.EMAIL, it) }
-                    displayName?.let { header(StubIdpHeaders.DISPLAY_NAME, it) }
                     queries.forEach { (key, value) -> queryParameter(key, value) }
                     headers.forEach { (key, value) -> header(key, value) }
                     forms.forEach { (key, value) -> formField(key, value) }
@@ -119,6 +107,4 @@ class SSOLoginHeadlessCommand : CliktCommand(name = "sso-login-headless") {
 /** Headers the backend stub IdP expects for headless SSO (contract provided by the backend team). */
 private object StubIdpHeaders {
     const val USER_ID = "X-Stub-User-Id"
-    const val EMAIL = "X-Stub-Email"
-    const val DISPLAY_NAME = "X-Stub-Display-Name"
 }
