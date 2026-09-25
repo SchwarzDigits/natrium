@@ -177,6 +177,50 @@ class SsoLoginViewModel : ViewModel() {
 | `APP_UPDATE_REQUIRED`          | This app is too old for the backend. | "Please update the app." |
 | `CONNECTION_ERROR`             | Network or transient backend failure. | "Cannot reach the server. Check your connection." |
 
+### 3g. Headless (browserless) SSO
+
+When your backend runs a component that acts as the SAML IdP and *simulates* the expected SAML
+responses, you don't need a browser at all. Natrium can imitate the browser and drive the whole
+SAML redirect/POST chain itself — you only supply the parameters that component needs.
+
+```kotlin
+suspend fun Natrium.ssoLoginHeadless(
+    ssoCode: String,
+    interceptor: HeadlessSsoInterceptor,
+): LoginResult
+```
+
+One call does initiate → drive → complete and returns a regular `LoginResult` (handle it exactly
+like §1, including the `TooManyDevices` branch). There is no `authorizationUrl` to open and no deep
+link to register.
+
+**The interceptor** is invoked once per outgoing request **to a non-Wire host** (i.e. to the
+external IdP component). Requests to Wire's own hosts — derived from your `BackendConfig` — are
+driven internally and never surfaced. No HTTP-library types leak through the boundary.
+
+```kotlin
+val result = Natrium.ssoLoginHeadless(ssoCode) { request: HeadlessSsoRequest ->
+    // request.url / request.host / request.method / request.queryParameters / request.formFields
+    HeadlessSsoInjection.Builder()
+        .queryParameter("tenant", "acme")
+        .header("X-Tenant-Token", token)
+        .formField("subject", userIdentifier)   // applied to SAML POST-binding submits
+        .build()
+}
+
+when (result) {
+    is LoginResult.Success                -> onLoggedIn(result.session)
+    is LoginResult.Failure.Error          -> showError(result.reason)  // LOGIN_FAILED / CONNECTION_ERROR
+    is LoginResult.Failure.TooManyDevices -> showDeviceLimitFlow(result.resolver)
+}
+```
+
+Natrium follows HTTP redirects **and** auto-submits SAML POST-binding forms (`SAMLResponse` /
+`RelayState`), preserving cookies across the chain, until the backend issues the terminal
+`wire://sso-login/success?cookie=…` redirect — whose cookie it then exchanges for a session just
+like `completeSSOLogin`. This assumes the IdP component runs on a host different from your Wire
+`api` host (so it can be told apart from Wire-internal traffic).
+
 ## 4. Session restoration
 
 After a process restart Natrium has a persisted account on disk but no live `Session` object. Recover it on app start:

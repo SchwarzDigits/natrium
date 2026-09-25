@@ -18,6 +18,7 @@
 package schwarz.digits.natrium
 
 import com.wire.kalium.logic.configuration.server.ServerConfig.Links
+import io.ktor.http.Url
 
 class BackendConfig(
     val name: String,
@@ -40,4 +41,15 @@ class BackendConfig(
         isOnPremises = isOnPremises,
         apiProxy = null,
     )
+
+    /**
+     * Hosts that belong to Wire (the backend itself). Used by the headless SSO flow to tell
+     * Wire-internal requests apart from requests to the external IdP: only the latter are
+     * surfaced to the consumer's [schwarz.digits.natrium.session.headless.HeadlessSsoInterceptor].
+     */
+    internal val wireHosts: Set<String> =
+        listOf(api, accounts, webSocket, teams, blackList, website)
+            .mapNotNull { runCatching { Url(it).host }.getOrNull() }
+            .filter { it.isNotBlank() }
+            .toSet()
 }
