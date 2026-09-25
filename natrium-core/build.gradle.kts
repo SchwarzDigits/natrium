@@ -37,7 +37,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation("com.wire.kalium:logic:0.0.7")
+            implementation("schwarz.opensource.natrium:logic:0.0.7-digits.2")
             api(libs.coroutines.core)
             implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.serialization.json)

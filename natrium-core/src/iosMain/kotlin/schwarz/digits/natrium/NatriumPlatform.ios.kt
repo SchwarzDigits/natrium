@@ -98,7 +98,8 @@ actual class NatriumPlatform {
                 serviceName = NSBundle.mainBundle.bundleIdentifier ?: "schwarz.digits.natrium",
             ),
             kaliumConfigs = KaliumConfigs(
-                shouldEncryptData = { false },
+                // Kalium's global and user databases are encrypted with SQLCipher.
+                shouldEncryptData = { true },
                 enableCalling = false,
                 wipeOnCookieInvalid = true,
             ),
