@@ -50,12 +50,14 @@ import platform.CoreFoundation.CFDataGetLength
 import platform.CoreFoundation.CFDictionaryCreate
 import platform.CoreFoundation.CFDictionaryRef
 import platform.CoreFoundation.CFRelease
+import platform.CoreFoundation.CFRetain
 import platform.CoreFoundation.CFStringRef
 import platform.CoreFoundation.CFTypeRef
 import platform.CoreFoundation.CFTypeRefVar
 import platform.CoreFoundation.kCFBooleanTrue
 import platform.CoreFoundation.kCFTypeDictionaryKeyCallBacks
 import platform.CoreFoundation.kCFTypeDictionaryValueCallBacks
+import platform.Foundation.CFBridgingRelease
 import platform.Foundation.CFBridgingRetain
 import platform.Foundation.NSFileManager
 import platform.posix.memcpy
@@ -69,7 +71,9 @@ import platform.Security.kSecAttrService
 import platform.Security.kSecClass
 import platform.Security.kSecClassGenericPassword
 import platform.Security.kSecMatchLimit
+import platform.Security.kSecMatchLimitAll
 import platform.Security.kSecMatchLimitOne
+import platform.Security.kSecReturnAttributes
 import platform.Security.kSecReturnData
 import platform.Security.kSecValueData
 import schwarz.digits.natrium.lifecycle.AppLifecycleState
@@ -80,6 +84,8 @@ private const val WIRE_KEYCHAIN_SERVICE = "wire.com"
 // natrium's own keychain entry that remembers the last data-container path across launches.
 private const val NATRIUM_KEYCHAIN_SERVICE = "schwarz.digits.natrium.internal"
 private const val HOME_DIR_ACCOUNT = "natrium_home_dir"
+// Kalium's former keychain service: the data root "<home>/Documents/natrium".
+private const val LEGACY_SERVICE_SUFFIX = "/Documents/natrium"
 
 actual class NatriumPlatform {
 
@@ -89,14 +95,14 @@ actual class NatriumPlatform {
     internal actual val platformName: String = "iOS"
 
     internal actual fun initialize(): CoreLogic {
-        healKeystoreSaltAfterContainerMove()
+        val stableService = NSBundle.mainBundle.bundleIdentifier ?: "schwarz.digits.natrium"
+        val legacyHomes = moveKaliumKeychainItemsToStableService(stableService)
+        healKeystoreSaltAfterContainerMove(legacyHomes)
         val rootPath = "${NSHomeDirectory()}/Documents/natrium"
 
         return CoreLogic(
             rootPath = rootPath,
-            keychainConfig = ApplePersistenceConfig(
-                serviceName = NSBundle.mainBundle.bundleIdentifier ?: "schwarz.digits.natrium",
-            ),
+            keychainConfig = ApplePersistenceConfig(serviceName = stableService),
             kaliumConfigs = KaliumConfigs(
                 // Kalium's global and user databases are encrypted with SQLCipher.
                 shouldEncryptData = { true },
@@ -122,13 +128,16 @@ actual class NatriumPlatform {
     // copy every keystore's salt from the OLD path-derived key to the NEW one BEFORE Kalium opens
     // CoreCrypto. Non-destructive — it only ADDS the salt under the new key; existing keychain items
     // and keystore files are untouched. Remove once CoreCrypto ships a path-independent salt key.
-    private fun healKeystoreSaltAfterContainerMove() {
+    //
+    // [legacyHomes] are home directories that older versions of the app ran in, taken from Kalium's path-based keychain
+    // services (see moveKaliumKeychainItemsToStableService). Those versions didn't remember their home directory here.
+    private fun healKeystoreSaltAfterContainerMove(legacyHomes: List<String>) {
         try {
-            val previousHome = keychainReadBytes(NATRIUM_KEYCHAIN_SERVICE, HOME_DIR_ACCOUNT)?.decodeToString()
+            val rememberedHome = keychainReadBytes(NATRIUM_KEYCHAIN_SERVICE, HOME_DIR_ACCOUNT)?.decodeToString()
             val currentHome = NSHomeDirectory()
-            if (previousHome == currentHome) return
+            val previousHomes = (listOfNotNull(rememberedHome) + legacyHomes).distinct().filter { it != currentHome }
 
-            if (previousHome != null) {
+            if (previousHomes.isNotEmpty()) {
                 val root = "$currentHome/Documents/natrium"
                 val fm = NSFileManager.defaultManager
                 val enumerator = fm.enumeratorAtPath(root)
@@ -137,14 +146,74 @@ actual class NatriumPlatform {
                     if (rel.substringAfterLast('/') != "keystore") continue
                     val newPath = "$root/$rel"
                     if (!isRegularFile(fm, newPath)) continue
-                    val oldPath = "$previousHome/Documents/natrium/$rel"
-                    val salt = keychainReadBytes(WIRE_KEYCHAIN_SERVICE, saltKey(oldPath)) ?: continue
+                    val salt = previousHomes.firstNotNullOfOrNull { previousHome ->
+                        keychainReadBytes(WIRE_KEYCHAIN_SERVICE, saltKey("$previousHome/Documents/natrium/$rel"))
+                    } ?: continue
                     keychainWriteBytes(WIRE_KEYCHAIN_SERVICE, saltKey(newPath), salt)
                 }
             }
             keychainWriteBytes(NATRIUM_KEYCHAIN_SERVICE, HOME_DIR_ACCOUNT, currentHome.encodeToByteArray())
         } catch (_: Throwable) {
             // Never let the workaround break initialization.
+        }
+    }
+
+    // Kalium used to keep its keychain items (auth tokens, the passphrases of the databases and keystores, user settings)
+    // under the service "<home>/Documents/natrium", derived from the data container's path, which iOS may change on an
+    // update. Since Kalium takes the service from the app, these items would no longer be found: the session is lost and,
+    // with wipeOnCookieInvalid, the local data too. They are copied once to [stableService]; an item that already exists
+    // there is never overwritten, and the old one is deleted only after the copy exists. Returns the home directories
+    // named by the old services.
+    private fun moveKaliumKeychainItemsToStableService(stableService: String): List<String> {
+        val legacyHomes = mutableSetOf<String>()
+        try {
+            keychainServiceAccounts()
+                .filter { (service, _) -> service.endsWith(LEGACY_SERVICE_SUFFIX) && service != stableService }
+                .forEach { (service, account) ->
+                    legacyHomes += service.removeSuffix(LEGACY_SERVICE_SUFFIX)
+                    if (keychainReadBytes(stableService, account) == null) {
+                        val value = keychainReadBytes(service, account) ?: return@forEach
+                        keychainWriteBytes(stableService, account, value)
+                    }
+                    if (keychainReadBytes(stableService, account) != null) keychainDelete(service, account)
+                }
+        } catch (_: Throwable) {
+            // Never let the migration break initialization.
+        }
+        return legacyHomes.toList()
+    }
+
+    // Service and account of every generic password this app can read.
+    @OptIn(ExperimentalForeignApi::class)
+    private fun keychainServiceAccounts(): List<Pair<String, String>> = memScoped {
+        val query = cfDictionaryOf(
+            kSecClass to kSecClassGenericPassword,
+            kSecReturnAttributes to kCFBooleanTrue,
+            kSecMatchLimit to kSecMatchLimitAll,
+        )
+        val result = alloc<CFTypeRefVar>()
+        if (SecItemCopyMatching(query, result.ptr) != 0) return@memScoped emptyList()
+        val items = CFBridgingRelease(result.value) as? List<*> ?: return@memScoped emptyList()
+        val serviceKey = CFBridgingRelease(CFRetain(kSecAttrService)) as String
+        val accountKey = CFBridgingRelease(CFRetain(kSecAttrAccount)) as String
+        items.mapNotNull { item ->
+            val attributes = item as? Map<*, *> ?: return@mapNotNull null
+            val service = attributes[serviceKey] as? String ?: return@mapNotNull null
+            val account = attributes[accountKey] as? String ?: return@mapNotNull null
+            service to account
+        }
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
+    private fun keychainDelete(service: String, account: String) {
+        memScoped {
+            SecItemDelete(
+                cfDictionaryOf(
+                    kSecClass to kSecClassGenericPassword,
+                    kSecAttrService to CFBridgingRetain(service),
+                    kSecAttrAccount to CFBridgingRetain(account),
+                ),
+            )
         }
     }
 
