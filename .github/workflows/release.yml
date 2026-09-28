@@ -34,6 +34,17 @@ jobs:
           echo "value=$version" >> "$GITHUB_OUTPUT"
           echo "Releasing natrium-core@$version"
 
+      # Builds every artifact the release consists of before anything is uploaded, so a broken
+      # release fails here instead of half-way through publishing. compileCommonMainKotlinMetadata
+      # matters in particular: it only runs when publishing, so a plain platform build never
+      # exercises it, and publishAndReleaseToMavenCentral reaches it only after it has already
+      # created the Maven Central staging repository and uploaded the Android artifacts.
+      - name: Verify natrium-core builds before publishing
+        run: |
+          ./gradlew :natrium-core:compileCommonMainKotlinMetadata :natrium-core:assemble \
+            -Pversion=${{ steps.version.outputs.value }} \
+            --no-configuration-cache --stacktrace
+
       - name: Publish natrium-core to Maven Central
         env:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
