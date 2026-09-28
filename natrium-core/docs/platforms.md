@@ -123,7 +123,7 @@ dependencies {
 }
 ```
 
-`natrium-core` is plain Kotlin/JVM here — no AGP / no Cocoa, just a regular library. Requires JDK 17+.
+`natrium-core` is plain Kotlin/JVM here — no AGP / no Cocoa, just a regular library. Requires JDK 21+.
 
 ### Initialization
 

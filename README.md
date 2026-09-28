@@ -24,7 +24,7 @@ All shared code lives in `natrium-core/src/commonMain/` and must compile for all
 
 ## Building
 
-Prerequisites: JDK 17+, Android SDK (compileSdk 36).
+Prerequisites: JDK 21+, Android SDK (compileSdk 36).
 
 ```bash
 # Build all targets

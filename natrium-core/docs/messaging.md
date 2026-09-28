@@ -157,6 +157,8 @@ Internally the SDK combines two Kalium streams (the message stream and an asset-
 
 `Success.filePath` is an [`okio.Path`](https://square.github.io/okio/) on local disk. Treat it as read-only; if the user wants to keep the file persistently, copy it to a location your app controls.
 
+The `dataPath` of an incoming file's `FileLink` doesn't point to the downloaded file; use `Success.filePath`.
+
 ## 9. History pagination
 
 `observeMessages` delivers an in-memory window. To load older messages on scroll-up:

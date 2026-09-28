@@ -5,7 +5,7 @@ This guide walks you from an empty project to a first successful login against y
 ## Requirements
 
 - **Kotlin** 2.3.0 (Natrium is currently built against this version; consumers should match)
-- **JDK 17** or newer
+- **JDK 21** or newer
 - **Android**: AGP 9.0+, `minSdk = 26`
 - **iOS**: arm64 device or simulator (Kotlin/Native)
 - A reachable Wire-compatible backend (you will need the `api`, `accounts`, `webSocket`, `teams`, `blackList`, `website` URLs)

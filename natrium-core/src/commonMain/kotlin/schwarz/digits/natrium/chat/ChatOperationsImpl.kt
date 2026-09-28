@@ -36,7 +36,6 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 import okio.FileSystem
 import okio.Path
-import okio.Path.Companion.toPath
 import schwarz.digits.natrium.Cancellable
 import schwarz.digits.natrium.conversation.ConversationId
 import schwarz.digits.natrium.file.FileLink
@@ -402,8 +401,8 @@ internal class ChatOperationsImpl(
         return object : FileLink {
             override val id: String = content.remoteData.assetId
             override val mimeType: String = content.mimeType
-            override val dataPath: Path = content.localData?.assetDataPath?.toPath()
-                ?: (FileSystem.SYSTEM_TEMPORARY_DIRECTORY / "natrium-asset-${content.remoteData.assetId}")
+            override val dataPath: Path =
+                FileSystem.SYSTEM_TEMPORARY_DIRECTORY / "natrium-asset-${content.remoteData.assetId}"
             override val dataSize: Long = content.sizeInBytes
             override val fileName: String = content.name ?: "unnamed"
             override val uploadedAt: Instant = messageDate
