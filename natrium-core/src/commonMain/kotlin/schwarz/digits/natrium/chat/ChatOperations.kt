@@ -18,6 +18,7 @@
 package schwarz.digits.natrium.chat
 
 import schwarz.digits.natrium.Cancellable
+import schwarz.digits.natrium.file.FileLink
 import schwarz.digits.natrium.users.NamedUser
 
 
@@ -31,4 +32,17 @@ interface ChatOperations {
     suspend fun downloadFile(messageId: String): FileDownloadResult
     suspend fun toggleReaction(messageId: String, emoji: String): ToggleReactionResult
     suspend fun sendReply(value: MessageValue, quotedMessageId: String): SendMessageResult
+
+    /**
+     * Answers the request with id [requestMessageId]. [attachments] are uploaded as file messages first
+     * and their message ids appended to the response; if an upload fails, the response is not sent.
+     */
+    suspend fun sendResponse(
+        requestMessageId: String,
+        response: Response,
+        attachments: List<FileLink> = emptyList(),
+    ): SendMessageResult
+
+    /** Sends free text with [attachments], uploaded as file messages before the text is sent. */
+    suspend fun sendText(text: String, attachments: List<FileLink> = emptyList()): SendMessageResult
 }

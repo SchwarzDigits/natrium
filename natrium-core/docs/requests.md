@@ -87,7 +87,8 @@ data class ChatMessage(
 ```
 
 `answeredByMessageId` is the id of the **first** response (typed or free text) that references the
-request. Computed from the messages Natrium has loaded; a response always comes after its request,
+request. Responses whose status is `FAILED`/`FAILED_REMOTELY` do not count, so a failed answer can be
+retried. Computed from the messages Natrium has loaded; a response always comes after its request,
 so it is part of the latest `observeMessages` window.
 
 ### 2.5 Sending
@@ -216,8 +217,8 @@ The response message is additionally sent as a Wire reply quoting the request
 ### 3.5 Quote previews
 
 `QuotedMessage.previewText` for a quoted Natrium message is derived from the parsed value instead
-of the raw JSON: request → `subject` (or `message` if empty), free text → `text`, response → a short
-summary (e.g. selected option title), unsupported → `null`.
+of the raw JSON: request → `subject` (or `message` if empty), free text and free-text response → `text`,
+other responses and unsupported messages → `null`.
 
 ## 4. Open points
 
@@ -226,6 +227,8 @@ summary (e.g. selected option title), unsupported → `null`.
 - **Editing / deleting** a request or response is not covered. A deleted request makes its
   responses reference an unknown id (receiver: response is still shown, request lookup fails).
 - **Payment** is intentionally not part of Natrium (needs a payment provider outside messaging).
+- **Answered check on send:** `sendResponse` looks for existing responses in the 500 most recent
+  messages of the conversation. A response older than that window is not detected.
 - **History windows:** `getHistory` pages may contain a request without its response (response is
   newer and therefore in the live window). Apps merging pages should take `answeredByMessageId`
   from the most recent snapshot.

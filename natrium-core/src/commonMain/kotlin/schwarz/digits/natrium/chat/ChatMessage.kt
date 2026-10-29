@@ -45,10 +45,15 @@ data class ChatMessage(
     val systemText: String? = null,
     val reactions: Map<String, ReactionInfo> = emptyMap(),
     val quotedMessage: QuotedMessage? = null,
+    /** Id of the first response to this message; only set when [value] is a [MessageValue.RequestValue]. */
+    val answeredByMessageId: String? = null,
 )
 
 sealed class MessageValue {
-    data class TextValue(val value: String) : MessageValue()
+    data class TextValue(
+        val value: String,
+        val attachmentMessageIds: List<String> = emptyList(),
+    ) : MessageValue()
     data class FileValue(val fileLink: FileLink) : MessageValue()
     data class LocationValue(
         val latitude: Float,
@@ -57,6 +62,11 @@ sealed class MessageValue {
     ) : MessageValue()
     data class KnockValue(val hotKnock: Boolean) : MessageValue()
     data class SystemValue(val event: SystemEvent) : MessageValue()
+    data class RequestValue(val request: Request) : MessageValue()
+    data class ResponseValue(val requestMessageId: String, val response: Response) : MessageValue()
+
+    /** Structured message from a newer protocol version or of an unknown type. */
+    data class UnsupportedValue(val protocolVersion: Int?, val type: String?) : MessageValue()
 }
 
 enum class SystemEvent {

@@ -26,6 +26,7 @@ import com.wire.kalium.logic.feature.UserSessionScope
 import com.wire.kalium.logic.feature.asset.MessageAssetResult
 import com.wire.kalium.logic.feature.asset.upload.AssetUploadParams
 import com.wire.kalium.logic.feature.asset.upload.ScheduleNewAssetMessageResult
+import com.wire.kalium.logic.feature.message.GetMessageByIdUseCase
 import com.wire.kalium.logic.feature.message.MessageOperationResult
 import com.wire.kalium.logic.feature.message.ToggleReactionResult as KaliumToggleReactionResult
 import kotlinx.coroutines.CoroutineScope
@@ -37,6 +38,8 @@ import kotlinx.datetime.Instant
 import okio.FileSystem
 import okio.Path
 import schwarz.digits.natrium.Cancellable
+import schwarz.digits.natrium.chat.protocol.MessageProtocol
+import schwarz.digits.natrium.chat.protocol.ResponseRules
 import schwarz.digits.natrium.conversation.ConversationId
 import schwarz.digits.natrium.file.FileLink
 import schwarz.digits.natrium.users.NamedUser
@@ -62,14 +65,18 @@ internal class ChatOperationsImpl(
         }
     }
 
-    private suspend fun sendFileMessage(value: MessageValue.FileValue): SendMessageResult {
-        return try {
-            val fileLink = value.fileLink
+    private suspend fun sendFileMessage(value: MessageValue.FileValue): SendMessageResult =
+        when (val result = uploadFile(value.fileLink)) {
+            is UploadResult.Success -> SendMessageResult.Success
+            is UploadResult.Failure -> result.failure
+        }
 
+    private suspend fun uploadFile(fileLink: FileLink): UploadResult {
+        return try {
             val isImage = fileLink.mimeType.startsWith("image/")
             val sizeLimit = scope.users.getAssetSizeLimit(isImage)
             if (fileLink.dataSize > sizeLimit) {
-                return SendMessageResult.Failure.FileTooLarge(fileLink.dataSize, sizeLimit)
+                return UploadResult.Failure(SendMessageResult.Failure.FileTooLarge(fileLink.dataSize, sizeLimit))
             }
 
             when (val result = scope.messages.sendAssetMessage(
@@ -85,31 +92,118 @@ internal class ChatOperationsImpl(
                     audioNormalizedLoudness = null,
                 )
             )) {
-                is ScheduleNewAssetMessageResult.Success -> SendMessageResult.Success
+                is ScheduleNewAssetMessageResult.Success -> UploadResult.Success(result.messageId)
                 is ScheduleNewAssetMessageResult.Failure.DisabledByTeam ->
-                    SendMessageResult.Failure.DisabledByTeam
+                    UploadResult.Failure(SendMessageResult.Failure.DisabledByTeam)
 
                 is ScheduleNewAssetMessageResult.Failure.RestrictedFileType ->
-                    SendMessageResult.Failure.RestrictedFileType
+                    UploadResult.Failure(SendMessageResult.Failure.RestrictedFileType)
 
                 is ScheduleNewAssetMessageResult.Failure.Generic ->
-                    SendMessageResult.Failure.Unknown("Failed to send file: ${result.coreFailure}")
+                    UploadResult.Failure(
+                        SendMessageResult.Failure.Unknown("Failed to send file: ${result.coreFailure}")
+                    )
             }
 
         } catch (e: Exception) {
-            SendMessageResult.Failure.Unknown(e.message ?: "Unknown error", e)
+            UploadResult.Failure(SendMessageResult.Failure.Unknown(e.message ?: "Unknown error", e))
         }
+    }
+
+    /** Uploads all [attachments] in order; stops at the first failure. */
+    private suspend fun uploadAll(attachments: List<FileLink>): UploadAllResult {
+        val ids = attachments.map { fileLink ->
+            when (val result = uploadFile(fileLink)) {
+                is UploadResult.Success -> result.messageId
+                is UploadResult.Failure -> return UploadAllResult.Failure(result.failure)
+            }
+        }
+        return UploadAllResult.Success(ids)
+    }
+
+    private suspend fun sendProtocolMessage(value: MessageValue, quotedMessageId: String? = null): SendMessageResult {
+        val text = MessageProtocol.encode(value)
+            ?: return SendMessageResult.Failure.Unknown("Sending this message type is not supported")
+        return sendTextMessage(text, quotedMessageId)
     }
 
     override suspend fun sendMessage(value: MessageValue): SendMessageResult {
         return when (value) {
-            is MessageValue.TextValue -> sendTextMessage(value.value)
             is MessageValue.FileValue -> sendFileMessage(value)
-            is MessageValue.LocationValue,
-            is MessageValue.KnockValue,
-            is MessageValue.SystemValue ->
-                SendMessageResult.Failure.Unknown("Sending this message type is not supported")
+            is MessageValue.ResponseValue -> sendResponse(value.requestMessageId, value.response)
+            else -> sendProtocolMessage(value)
         }
+    }
+
+    override suspend fun sendText(text: String, attachments: List<FileLink>): SendMessageResult {
+        val ids = when (val upload = uploadAll(attachments)) {
+            is UploadAllResult.Success -> upload.messageIds
+            is UploadAllResult.Failure -> return upload.failure
+        }
+        return sendProtocolMessage(MessageValue.TextValue(text, ids))
+    }
+
+    override suspend fun sendResponse(
+        requestMessageId: String,
+        response: Response,
+        attachments: List<FileLink>,
+    ): SendMessageResult {
+        val lookup = try {
+            lookupRequest(requestMessageId)
+        } catch (e: Exception) {
+            return SendMessageResult.Failure.Unknown(e.message ?: "Unknown error", e)
+        }
+        val request = when (lookup) {
+            is RequestLookup.Found -> lookup.request
+            is RequestLookup.Invalid -> return SendMessageResult.Failure.InvalidResponse(lookup.reason)
+        }
+        ResponseRules.validate(request, response, pendingAttachments = attachments.size)?.let {
+            return SendMessageResult.Failure.InvalidResponse(it)
+        }
+
+        val uploadedIds = when (val upload = uploadAll(attachments)) {
+            is UploadAllResult.Success -> upload.messageIds
+            is UploadAllResult.Failure -> return upload.failure
+        }
+        val completeResponse = when (response) {
+            is Response.Asset -> response.copy(attachmentMessageIds = response.attachmentMessageIds + uploadedIds)
+            is Response.FreeText -> response.copy(attachmentMessageIds = response.attachmentMessageIds + uploadedIds)
+            else -> response
+        }
+        return sendProtocolMessage(
+            MessageValue.ResponseValue(requestMessageId, completeResponse),
+            quotedMessageId = requestMessageId,
+        )
+    }
+
+    /**
+     * Finds the request in the recent messages (falling back to a direct lookup) and checks that it has no
+     * response yet. Responses are always newer than their request, so the recent window contains them.
+     */
+    private suspend fun lookupRequest(requestMessageId: String): RequestLookup {
+        val recent = filterAndMapChatMessages(
+            scope.messages.getRecentMessages(
+                conversationId = conversationId.toQualifiedId(),
+                limit = ANSWER_LOOKUP_LIMIT,
+                offset = 0,
+                visibility = listOf(Message.Visibility.VISIBLE),
+            ).first(),
+            emptyMap(),
+        )
+        val requestMessage = recent.firstOrNull { it.id == requestMessageId }
+            ?: when (val result = scope.messages.getMessageById(conversationId.toQualifiedId(), requestMessageId)) {
+                is GetMessageByIdUseCase.Result.Success ->
+                    (result.message as? Message.Regular)?.let { mapRegularMessage(it, emptyMap()) }
+                is GetMessageByIdUseCase.Result.Failure -> null
+            }
+            ?: return RequestLookup.Invalid(InvalidResponseReason.REQUEST_NOT_FOUND)
+
+        val request = (requestMessage.value as? MessageValue.RequestValue)?.request
+            ?: return RequestLookup.Invalid(InvalidResponseReason.NOT_A_REQUEST)
+        if (ResponseRules.firstResponseId(requestMessageId, recent) != null) {
+            return RequestLookup.Invalid(InvalidResponseReason.ALREADY_ANSWERED)
+        }
+        return RequestLookup.Found(request)
     }
 
     override fun observeMessages(listener: (Collection<ChatMessage>) -> Unit): Cancellable {
@@ -220,12 +314,10 @@ internal class ChatOperationsImpl(
 
     override suspend fun sendReply(value: MessageValue, quotedMessageId: String): SendMessageResult {
         return when (value) {
-            is MessageValue.TextValue -> sendTextMessage(value.value, quotedMessageId)
             is MessageValue.FileValue -> sendFileMessage(value) // quotedMessageId TODO when Kalium supports it
-            is MessageValue.LocationValue,
-            is MessageValue.KnockValue,
-            is MessageValue.SystemValue ->
-                SendMessageResult.Failure.Unknown("Sending this message type is not supported")
+            // a response always quotes its request
+            is MessageValue.ResponseValue -> sendResponse(value.requestMessageId, value.response)
+            else -> sendProtocolMessage(value, quotedMessageId)
         }
     }
 
@@ -266,7 +358,7 @@ internal class ChatOperationsImpl(
                 }
             }
 
-        return (regular + system).sortedBy { it.timestamp }
+        return ResponseRules.withAnsweredState((regular + system).sortedBy { it.timestamp })
     }
 
     private fun mapRegularMessage(
@@ -298,7 +390,7 @@ internal class ChatOperationsImpl(
                 ChatMessage(
                     id = message.id,
                     sender = sender,
-                    value = MessageValue.TextValue(textContent.value),
+                    value = MessageProtocol.decode(textContent.value),
                     timestamp = message.date,
                     status = mapStatus(message.status),
                     isSelf = message.isSelfMessage,
@@ -336,7 +428,7 @@ internal class ChatOperationsImpl(
                 ChatMessage(
                     id = message.id,
                     sender = sender,
-                    value = MessageValue.TextValue(multipart.value ?: ""),
+                    value = MessageProtocol.decode(multipart.value ?: ""),
                     timestamp = message.date,
                     status = mapStatus(message.status),
                     isSelf = message.isSelfMessage,
@@ -382,10 +474,10 @@ internal class ChatOperationsImpl(
     private fun mapQuotedMessage(details: MessageContent.QuotedMessageDetails?): QuotedMessage? {
         if (details == null) return null
         val previewText = when (val content = details.quotedContent) {
-            is MessageContent.QuotedMessageDetails.Text -> content.value
+            is MessageContent.QuotedMessageDetails.Text -> MessageProtocol.previewText(content.value)
             is MessageContent.QuotedMessageDetails.Asset -> content.assetName ?: content.assetMimeType
             is MessageContent.QuotedMessageDetails.Location -> content.locationName
-            is MessageContent.QuotedMessageDetails.Multipart -> content.text
+            is MessageContent.QuotedMessageDetails.Multipart -> content.text?.let { MessageProtocol.previewText(it) }
             MessageContent.QuotedMessageDetails.Deleted -> null
             MessageContent.QuotedMessageDetails.Invalid -> null
         }
@@ -426,5 +518,24 @@ internal class ChatOperationsImpl(
         AssetTransferStatus.DOWNLOAD_IN_PROGRESS -> FileTransferStatus.DOWNLOADING
         AssetTransferStatus.FAILED_DOWNLOAD, AssetTransferStatus.NOT_FOUND -> FileTransferStatus.DOWNLOAD_FAILED
         AssetTransferStatus.SAVED_INTERNALLY, AssetTransferStatus.SAVED_EXTERNALLY -> FileTransferStatus.DOWNLOADED
+    }
+
+    private sealed interface UploadResult {
+        data class Success(val messageId: String) : UploadResult
+        data class Failure(val failure: SendMessageResult.Failure) : UploadResult
+    }
+
+    private sealed interface UploadAllResult {
+        data class Success(val messageIds: List<String>) : UploadAllResult
+        data class Failure(val failure: SendMessageResult.Failure) : UploadAllResult
+    }
+
+    private sealed interface RequestLookup {
+        data class Found(val request: Request) : RequestLookup
+        data class Invalid(val reason: InvalidResponseReason) : RequestLookup
+    }
+
+    private companion object {
+        const val ANSWER_LOOKUP_LIMIT = 500
     }
 }

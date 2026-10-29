@@ -109,6 +109,8 @@ Observe via `Natrium.observeAuthEvents(listener)`. Emitted on login and logout e
 |--------|-----------|---------|
 | `suspend fun sendMessage(value)` | `value: MessageValue` | `SendMessageResult` |
 | `suspend fun sendReply(value, quotedMessageId)` | `value: MessageValue`, `quotedMessageId: String` | `SendMessageResult` |
+| `suspend fun sendResponse(requestMessageId, response, attachments)` | `requestMessageId: String`, `response: Response`, `attachments: List<FileLink> = emptyList()` | `SendMessageResult` |
+| `suspend fun sendText(text, attachments)` | `text: String`, `attachments: List<FileLink> = emptyList()` | `SendMessageResult` |
 | `suspend fun downloadFile(messageId)` | `messageId: String` | `FileDownloadResult` |
 | `suspend fun toggleReaction(messageId, emoji)` | `messageId: String`, `emoji: String` | `ToggleReactionResult` |
 | `fun observeMessages(listener)` | `listener: (Collection<ChatMessage>) -> Unit` | `Cancellable` |
@@ -223,17 +225,49 @@ Values: `PENDING`, `APPROVED`, `REJECTED`
 | `systemText` | `String?` |
 | `reactions` | `Map<String, ReactionInfo>` |
 | `quotedMessage` | `QuotedMessage?` |
+| `answeredByMessageId` | `String?` (only on `RequestValue` messages) |
 
 ### MessageValue
 `sealed class schwarz.digits.natrium.chat.MessageValue`
 
 | Subclass | Fields |
 |----------|--------|
-| `TextValue` | `value: String` |
+| `TextValue` | `value: String`, `attachmentMessageIds: List<String>` |
 | `FileValue` | `fileLink: FileLink` |
 | `LocationValue` | `latitude: Float`, `longitude: Float`, `name: String?` |
 | `KnockValue` | `hotKnock: Boolean` |
 | `SystemValue` | `event: SystemEvent` |
+| `RequestValue` | `request: Request` |
+| `ResponseValue` | `requestMessageId: String`, `response: Response` |
+| `UnsupportedValue` | `protocolVersion: Int?`, `type: String?` |
+
+### Request
+`sealed class schwarz.digits.natrium.chat.Request` — common fields `subject: String`, `message: String`, `deadline: Instant?`
+
+| Subclass | Additional fields |
+|----------|--------|
+| `SingleSelect` | `options: List<Option>` |
+| `MultiSelect` | `options: List<Option>` |
+| `Asset` | — |
+| `Appointment` | `from: Instant`, `to: Instant` |
+
+`data class Option(id: String, title: String)`
+
+### Response
+`sealed class schwarz.digits.natrium.chat.Response`
+
+| Subclass | Fields |
+|----------|--------|
+| `SingleSelect` | `selectedOptionId: String` |
+| `MultiSelect` | `selectedOptionIds: List<String>` |
+| `Asset` | `attachmentMessageIds: List<String>` |
+| `Appointment` | `accepted: Boolean` |
+| `FreeText` | `text: String`, `attachmentMessageIds: List<String>` |
+
+### InvalidResponseReason
+`enum schwarz.digits.natrium.chat.InvalidResponseReason`
+
+Values: `REQUEST_NOT_FOUND`, `NOT_A_REQUEST`, `ALREADY_ANSWERED`, `TYPE_MISMATCH`, `UNKNOWN_OPTION`, `EMPTY_SELECTION`, `MISSING_ATTACHMENTS`
 
 ### SystemEvent
 `enum schwarz.digits.natrium.chat.SystemEvent`
@@ -369,7 +403,7 @@ All result types are sealed classes following the pattern `Success` / `Failure.*
 | `GetMembersResult` | `Success(members: List<ConversationMember>)` | `Failure.NotLoggedIn`, `Failure.Unknown(message, cause?)` |
 | `GetJoinLinkResult` | `Success(joinLink: JoinLink)` | `Failure.NotLoggedIn`, `Failure.Unknown(message, cause?)` |
 | `RevokeJoinLinkResult` | `Success` | `Failure.NotLoggedIn`, `Failure.Unknown(message, cause?)` |
-| `SendMessageResult` | `Success` | `Failure.NotLoggedIn`, `Failure.DisabledByTeam`, `Failure.RestrictedFileType`, `Failure.FileTooLarge(fileSizeBytes: Long, limitBytes: Long)`, `Failure.Unknown(message, cause?)` |
+| `SendMessageResult` | `Success` | `Failure.NotLoggedIn`, `Failure.DisabledByTeam`, `Failure.RestrictedFileType`, `Failure.FileTooLarge(fileSizeBytes: Long, limitBytes: Long)`, `Failure.InvalidResponse(reason: InvalidResponseReason)`, `Failure.Unknown(message, cause?)` |
 | `ChatHistoryResult` | `Success(messages: List<ChatMessage>)` | `Failure.NotLoggedIn`, `Failure.Unknown(message, cause?)` |
 | `FileDownloadResult` | `Success(filePath: Path)` | `Failure.NotLoggedIn`, `Failure.Unknown(message, cause?)` |
 | `ToggleReactionResult` | `Success` | `Failure.Unknown` |
