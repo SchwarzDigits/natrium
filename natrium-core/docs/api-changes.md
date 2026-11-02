@@ -8,6 +8,21 @@ to the full documentation. ⚠️ marks changes that break existing callers or t
 Developed on branch `v2`; this section describes the difference to `main` and is updated in place
 until the release.
 
+### Breaking changes at a glance
+
+No public API was removed or renamed; new parameters have defaults. What breaks:
+
+- ⚠️ **Wire format:** every text message is a JSON envelope (details below). Clients on `main` and
+  plain Wire clients show raw JSON, so all participants have to move to v2 together.
+- ⚠️ **Exhaustive `when`:** `MessageValue` has new subclasses (`RequestValue`, `ResponseValue`,
+  `UnsupportedValue`) and `SendMessageResult.Failure` has `InvalidResponse` — a `when` without
+  `else` over them no longer compiles.
+- ⚠️ **Own implementations of the interfaces** (fakes, mocks): `ChatOperations` gained
+  `sendRequest`, `sendResponse`, `sendText`; `ConversationOperations` gained `setMetadata`;
+  `ConversationManager.createConversation` gained a `metadata` parameter. Callers are not affected.
+- Binary only: `TextValue` and `ConversationInfo` gained fields, which changes their constructor,
+  `copy` and `componentN`; code compiled against `main` has to be recompiled.
+
 ### Structured requests & responses
 
 - New message values: `MessageValue.RequestValue(request, attachmentMessageIds)`,
