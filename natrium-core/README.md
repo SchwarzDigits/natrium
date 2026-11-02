@@ -54,7 +54,7 @@ After `Natrium.login(...)` you hold a `Session` that exposes:
 | [Requests & Responses](./docs/requests.md) | Structured requests (select, upload, appointment, acknowledgement, free text) and typed responses on top of text messages; wire format and validation. |
 | [Platforms](./docs/platforms.md) | Android, iOS, and JVM specifics — storage locations, lifecycle wiring, user-agent. |
 | [API Reference](./docs/api-reference.md) | Full method/parameter/result-type listing — the source of truth for signatures. |
-| [API Changes](./docs/api-changes.md) | Short history of API changes, newest first, with links to the full documentation. |
+| [API Changes](./docs/api-changes.md) | API changes per version, newest first, with links to the full documentation. |
 
 If you've never used Natrium before, read in this order: **Getting Started → Concepts → Authentication → Conversations → Messaging**. Pull up the API Reference as a side-channel when you need exact signatures or the complete list of failure branches.
 
