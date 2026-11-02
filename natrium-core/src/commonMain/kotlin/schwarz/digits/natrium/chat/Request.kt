@@ -22,18 +22,21 @@ import kotlinx.datetime.Instant
 /**
  * A structured request sent to the other party of a conversation.
  * Every request can be answered with the matching [Response] type or with [Response.FreeText].
- * [message] is the question to the other party; [subject] is an optional short title.
+ * [message] is the question to the other party; [subject] is an optional short title and [text] an
+ * optional accompanying message shown above the question (e.g. the letter the question belongs to).
  */
 sealed class Request {
     abstract val subject: String
     abstract val message: String
     abstract val deadline: Instant?
+    abstract val text: String
 
     data class SingleSelect(
         override val subject: String = "",
         override val message: String,
         val options: List<Option>,
         override val deadline: Instant? = null,
+        override val text: String = "",
     ) : Request()
 
     data class MultiSelect(
@@ -41,6 +44,7 @@ sealed class Request {
         override val message: String,
         val options: List<Option>,
         override val deadline: Instant? = null,
+        override val text: String = "",
     ) : Request()
 
     /**
@@ -53,6 +57,7 @@ sealed class Request {
         val document: String = "",
         val mimeTypes: List<String> = emptyList(),
         override val deadline: Instant? = null,
+        override val text: String = "",
     ) : Request()
 
     /** Offers appointment [slots]; the other party picks exactly one. */
@@ -62,6 +67,7 @@ sealed class Request {
         val slots: List<AppointmentSlot>,
         val location: String = "",
         override val deadline: Instant? = null,
+        override val text: String = "",
     ) : Request()
 
     /** Asks the other party to confirm the fixed sentence [confirmation]. */
@@ -70,6 +76,7 @@ sealed class Request {
         override val message: String,
         val confirmation: String,
         override val deadline: Instant? = null,
+        override val text: String = "",
     ) : Request()
 
     /** Asks a question that is answered with [Response.FreeText]; [maxLength] limits the answer if set. */
@@ -78,6 +85,7 @@ sealed class Request {
         override val message: String,
         val maxLength: Int? = null,
         override val deadline: Instant? = null,
+        override val text: String = "",
     ) : Request()
 }
 

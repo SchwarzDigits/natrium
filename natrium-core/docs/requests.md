@@ -48,8 +48,9 @@ sealed class MessageValue {
 
 ### 2.2 Requests
 
-Every request has a `message` (the question to the other party), an optional `subject` (short title)
-and an optional `deadline`. Files sent along with a request live on `RequestValue.attachmentMessageIds`.
+Every request has a `message` (the question to the other party), an optional `subject` (short title),
+an optional `text` (an accompanying message shown above the question, e.g. the letter the question
+belongs to) and an optional `deadline`. Files sent along with a request live on `RequestValue.attachmentMessageIds`.
 Several questions are sent as several requests, one after the other.
 
 ```kotlin
@@ -57,6 +58,7 @@ sealed class Request {
     abstract val subject: String
     abstract val message: String
     abstract val deadline: Instant?
+    abstract val text: String
 
     data class SingleSelect(…, val options: List<Option>) : Request()
     data class MultiSelect(…, val options: List<Option>) : Request()
@@ -208,7 +210,8 @@ With attachments:
 | `ACKNOWLEDGE` | `confirmation` |
 | `FREE_TEXT` | `max_length` (optional) |
 
-Common fields: `subject` (default `""`), `message`, `deadline` (optional ISO-8601 instant).
+Common fields: `subject` (default `""`), `message`, `deadline` (optional ISO-8601 instant),
+`text` (default `""`; encoded last, after the type-specific fields and `deadline`).
 Files sent with the request are referenced in the envelope's top-level `attachments` (file message ids),
 as for free text:
 

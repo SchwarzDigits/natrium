@@ -67,6 +67,7 @@ internal sealed interface RequestDto {
         val message: String,
         val options: List<OptionDto>,
         val deadline: Instant? = null,
+        val text: String = "",
     ) : RequestDto
 
     @Serializable
@@ -76,6 +77,7 @@ internal sealed interface RequestDto {
         val message: String,
         val options: List<OptionDto>,
         val deadline: Instant? = null,
+        val text: String = "",
     ) : RequestDto
 
     @Serializable
@@ -86,6 +88,7 @@ internal sealed interface RequestDto {
         val document: String = "",
         @SerialName("mime_types") val mimeTypes: List<String> = emptyList(),
         val deadline: Instant? = null,
+        val text: String = "",
     ) : RequestDto
 
     @Serializable
@@ -96,6 +99,7 @@ internal sealed interface RequestDto {
         val slots: List<SlotDto>,
         val location: String = "",
         val deadline: Instant? = null,
+        val text: String = "",
     ) : RequestDto
 
     @Serializable
@@ -105,6 +109,7 @@ internal sealed interface RequestDto {
         val message: String,
         val confirmation: String,
         val deadline: Instant? = null,
+        val text: String = "",
     ) : RequestDto
 
     @Serializable
@@ -114,6 +119,7 @@ internal sealed interface RequestDto {
         val message: String,
         @SerialName("max_length") val maxLength: Int? = null,
         val deadline: Instant? = null,
+        val text: String = "",
     ) : RequestDto
 }
 
@@ -145,21 +151,21 @@ internal sealed interface ResponseDto {
 }
 
 internal fun Request.toDto(): RequestDto = when (this) {
-    is Request.SingleSelect -> RequestDto.SingleSelect(subject, message, options.map { it.toDto() }, deadline)
-    is Request.MultiSelect -> RequestDto.MultiSelect(subject, message, options.map { it.toDto() }, deadline)
-    is Request.Asset -> RequestDto.Asset(subject, message, document, mimeTypes, deadline)
-    is Request.Appointment -> RequestDto.Appointment(subject, message, slots.map { it.toDto() }, location, deadline)
-    is Request.Acknowledge -> RequestDto.Acknowledge(subject, message, confirmation, deadline)
-    is Request.FreeText -> RequestDto.FreeText(subject, message, maxLength, deadline)
+    is Request.SingleSelect -> RequestDto.SingleSelect(subject, message, options.map { it.toDto() }, deadline, text)
+    is Request.MultiSelect -> RequestDto.MultiSelect(subject, message, options.map { it.toDto() }, deadline, text)
+    is Request.Asset -> RequestDto.Asset(subject, message, document, mimeTypes, deadline, text)
+    is Request.Appointment -> RequestDto.Appointment(subject, message, slots.map { it.toDto() }, location, deadline, text)
+    is Request.Acknowledge -> RequestDto.Acknowledge(subject, message, confirmation, deadline, text)
+    is Request.FreeText -> RequestDto.FreeText(subject, message, maxLength, deadline, text)
 }
 
 internal fun RequestDto.toDomain(): Request = when (this) {
-    is RequestDto.SingleSelect -> Request.SingleSelect(subject, message, options.map { it.toDomain() }, deadline)
-    is RequestDto.MultiSelect -> Request.MultiSelect(subject, message, options.map { it.toDomain() }, deadline)
-    is RequestDto.Asset -> Request.Asset(subject, message, document, mimeTypes, deadline)
-    is RequestDto.Appointment -> Request.Appointment(subject, message, slots.map { it.toDomain() }, location, deadline)
-    is RequestDto.Acknowledge -> Request.Acknowledge(subject, message, confirmation, deadline)
-    is RequestDto.FreeText -> Request.FreeText(subject, message, maxLength, deadline)
+    is RequestDto.SingleSelect -> Request.SingleSelect(subject, message, options.map { it.toDomain() }, deadline, text)
+    is RequestDto.MultiSelect -> Request.MultiSelect(subject, message, options.map { it.toDomain() }, deadline, text)
+    is RequestDto.Asset -> Request.Asset(subject, message, document, mimeTypes, deadline, text)
+    is RequestDto.Appointment -> Request.Appointment(subject, message, slots.map { it.toDomain() }, location, deadline, text)
+    is RequestDto.Acknowledge -> Request.Acknowledge(subject, message, confirmation, deadline, text)
+    is RequestDto.FreeText -> Request.FreeText(subject, message, maxLength, deadline, text)
 }
 
 internal fun Response.toDto(): ResponseDto = when (this) {

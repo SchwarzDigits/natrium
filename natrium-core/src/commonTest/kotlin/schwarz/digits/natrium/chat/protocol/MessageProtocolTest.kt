@@ -36,6 +36,7 @@ class MessageProtocolTest {
             ),
             Request.Acknowledge(message = "Please confirm", confirmation = "I have read the notice."),
             Request.FreeText(message = "How many parking spaces?", maxLength = 1000, deadline = deadline),
+            Request.SingleSelect(message = "Carport roof?", options = options, text = "Dear Ms Doe,\nthank you for your application."),
         )
         requests.forEach { request ->
             assertEquals(MessageValue.RequestValue(request), roundTrip(MessageValue.RequestValue(request)))
@@ -73,6 +74,14 @@ class MessageProtocolTest {
         assertEquals(
             """{"natrium":1,"type":"REQUEST","request":{"type":"FREE_TEXT","message":"?","max_length":10},"attachments":["f"]}""",
             MessageProtocol.encode(MessageValue.RequestValue(Request.FreeText(message = "?", maxLength = 10), listOf("f"))),
+        )
+    }
+
+    @Test
+    fun encodesAccompanyingTextLast() {
+        assertEquals(
+            """{"natrium":1,"type":"REQUEST","request":{"type":"ACKNOWLEDGE","message":"?","confirmation":"ok","text":"Dear"}}""",
+            MessageProtocol.encode(MessageValue.RequestValue(Request.Acknowledge(message = "?", confirmation = "ok", text = "Dear"))),
         )
     }
 
