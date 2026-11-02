@@ -35,7 +35,11 @@ interface ConversationOperations {
 
     suspend fun getConversationInfo(): GetConversationInfoResult
 
+    /** Renames the conversation; its metadata is kept. */
     suspend fun setTitle(title: String): SetTitleResult
+
+    /** Replaces the conversation's metadata; its title is kept. */
+    suspend fun setMetadata(metadata: Map<String, String>): SetTitleResult
 
     suspend fun delete(): DeleteConversationResult
 }

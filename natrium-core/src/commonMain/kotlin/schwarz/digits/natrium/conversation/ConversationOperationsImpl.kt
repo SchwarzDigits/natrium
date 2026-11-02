@@ -183,8 +183,9 @@ internal class ConversationOperationsImpl(
         when (val details = readCurrentDetails()) {
             is ObserveConversationDetailsUseCase.Result.Success -> {
                 val conv = details.conversationDetails.conversation
+                val name = ConversationName.decode(conv.name ?: "")
                 GetConversationInfoResult.Success(
-                    ConversationInfo(id = conversationId, title = conv.name ?: "")
+                    ConversationInfo(id = conversationId, title = name.title, metadata = name.metadata)
                 )
             }
             is ObserveConversationDetailsUseCase.Result.Failure ->
@@ -194,10 +195,28 @@ internal class ConversationOperationsImpl(
         GetConversationInfoResult.Failure.Unknown(e.message ?: "Unknown error", e)
     }
 
-    override suspend fun setTitle(title: String): SetTitleResult = try {
-        val result = sessionScope.conversations.renameConversation(convId(), title)
-        if (result is RenamingResult.Success) SetTitleResult.Success
-        else SetTitleResult.Failure.Unknown("Rename failed")
+    override suspend fun setTitle(title: String): SetTitleResult =
+        updateName { current -> ConversationName.encode(title, current.metadata) }
+
+    override suspend fun setMetadata(metadata: Map<String, String>): SetTitleResult =
+        updateName { current -> ConversationName.encode(current.title, metadata) }
+
+    /** Rewrites the conversation name from its current title and metadata. */
+    private suspend fun updateName(build: (ConversationName.Decoded) -> String): SetTitleResult = try {
+        val current = when (val details = readCurrentDetails()) {
+            is ObserveConversationDetailsUseCase.Result.Success ->
+                ConversationName.decode(details.conversationDetails.conversation.name ?: "")
+            is ObserveConversationDetailsUseCase.Result.Failure ->
+                return SetTitleResult.Failure.Unknown("Failed to load conversation details")
+        }
+        val name = build(current)
+        if (name.length > ConversationName.MAX_LENGTH) {
+            SetTitleResult.Failure.Unknown(NAME_TOO_LONG)
+        } else {
+            val result = sessionScope.conversations.renameConversation(convId(), name)
+            if (result is RenamingResult.Success) SetTitleResult.Success
+            else SetTitleResult.Failure.Unknown("Rename failed")
+        }
     } catch (e: Exception) {
         SetTitleResult.Failure.Unknown(e.message ?: "Unknown error", e)
     }

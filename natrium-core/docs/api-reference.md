@@ -78,7 +78,7 @@ Observe via `Natrium.observeAuthEvents(listener)`. Emitted on login and logout e
 | `fun observeConversations(listener)` | `listener: (Collection<ConversationOperations>) -> Unit` | `Cancellable` |
 | `suspend fun listConversations()` | — | `ConversationListResult` |
 | `suspend fun findConversation(id)` | `id: ConversationId` | `FindConversationResult` |
-| `suspend fun createConversation(title)` | `title: String` | `CreateConversationResult` |
+| `suspend fun createConversation(title, metadata)` | `title: String`, `metadata: Map<String, String> = emptyMap()` | `CreateConversationResult` |
 | `suspend fun joinConversation(joinLink, password?)` | `joinLink: JoinLink`, `password: String? = null` | `JoinConversationResult` |
 
 ---
@@ -96,7 +96,8 @@ Observe via `Natrium.observeAuthEvents(listener)`. Emitted on login and logout e
 | `suspend fun getJoinLink(password?)` | `password: String? = null` | `GetJoinLinkResult` |
 | `suspend fun revokeJoinLink()` | — | `RevokeJoinLinkResult` |
 | `suspend fun getConversationInfo()` | — | `GetConversationInfoResult` |
-| `suspend fun setTitle(title)` | `title: String` | `SetTitleResult` |
+| `suspend fun setTitle(title)` | `title: String` (metadata is kept) | `SetTitleResult` |
+| `suspend fun setMetadata(metadata)` | `metadata: Map<String, String>` (title is kept) | `SetTitleResult` |
 | `suspend fun delete()` | — | `DeleteConversationResult` |
 
 ---

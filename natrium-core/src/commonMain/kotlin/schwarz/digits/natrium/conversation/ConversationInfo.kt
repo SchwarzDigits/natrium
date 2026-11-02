@@ -17,7 +17,12 @@
 
 package schwarz.digits.natrium.conversation
 
+/**
+ * [title] is the display title. [metadata] are app-defined key/value pairs stored with the
+ * conversation (see docs/conversations.md); empty for conversations created without.
+ */
 data class ConversationInfo(
     val id: ConversationId,
     val title: String,
+    val metadata: Map<String, String> = emptyMap(),
 )

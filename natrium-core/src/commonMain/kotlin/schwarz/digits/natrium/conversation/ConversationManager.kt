@@ -26,7 +26,14 @@ interface ConversationManager {
 
     suspend fun findConversation(id: ConversationId): FindConversationResult
 
-    suspend fun createConversation(title: String): CreateConversationResult
+    /**
+     * Creates a group conversation. [metadata] is stored with it and returned in [ConversationInfo];
+     * title and metadata together must fit Wire's conversation name (256 characters, encoded).
+     */
+    suspend fun createConversation(
+        title: String,
+        metadata: Map<String, String> = emptyMap(),
+    ): CreateConversationResult
 
     suspend fun joinConversation(joinLink: JoinLink, password: String? = null): JoinConversationResult
 }
