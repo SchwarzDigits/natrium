@@ -48,6 +48,7 @@ See [natrium-core/README.md](natrium-core/README.md) for API usage and code exam
 
 - [Getting Started](natrium-core/docs/getting-started.md) — install, initialize, first login
 - [API Reference](natrium-core/docs/api-reference.md) — full public-type and method listing
+- [API Changes](natrium-core/docs/api-changes.md) — short history of API changes, newest first
 
 See [`natrium-core/README.md`](natrium-core/README.md) for the complete documentation index and design overview.
 
