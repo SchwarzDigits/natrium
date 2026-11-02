@@ -135,6 +135,14 @@ internal class ChatOperationsImpl(
         }
     }
 
+    override suspend fun sendRequest(request: Request, attachments: List<FileLink>): SendMessageResult {
+        val ids = when (val upload = uploadAll(attachments)) {
+            is UploadAllResult.Success -> upload.messageIds
+            is UploadAllResult.Failure -> return upload.failure
+        }
+        return sendProtocolMessage(MessageValue.RequestValue(request, ids))
+    }
+
     override suspend fun sendText(text: String, attachments: List<FileLink>): SendMessageResult {
         val ids = when (val upload = uploadAll(attachments)) {
             is UploadAllResult.Success -> upload.messageIds

@@ -37,7 +37,10 @@ sealed class MessageValue {
     ) : MessageValue()
     // FileValue, LocationValue, KnockValue, SystemValue unchanged
 
-    data class RequestValue(val request: Request) : MessageValue()                       // NEW
+    data class RequestValue(
+        val request: Request,
+        val attachmentMessageIds: List<String> = emptyList(),
+    ) : MessageValue()                                                                    // NEW
     data class ResponseValue(val requestMessageId: String, val response: Response) : MessageValue()  // NEW
     data class UnsupportedValue(val protocolVersion: Int?, val type: String?) : MessageValue()       // NEW
 }
@@ -45,7 +48,9 @@ sealed class MessageValue {
 
 ### 2.2 Requests
 
-Every request has a `subject`, a `message` and an optional `deadline`.
+Every request has a `message` (the question to the other party), an optional `subject` (short title)
+and an optional `deadline`. Files sent along with a request live on `RequestValue.attachmentMessageIds`.
+Several questions are sent as several requests, one after the other.
 
 ```kotlin
 sealed class Request {
@@ -55,15 +60,23 @@ sealed class Request {
 
     data class SingleSelect(…, val options: List<Option>) : Request()
     data class MultiSelect(…, val options: List<Option>) : Request()
-    data class Asset(…) : Request()                                   // "please upload documents"
-    data class Appointment(…, val from: Instant, val to: Instant) : Request()
+    data class Asset(…, val document: String = "", val mimeTypes: List<String> = emptyList()) : Request()
+    data class Appointment(…, val slots: List<AppointmentSlot>, val location: String = "") : Request()
+    data class Acknowledge(…, val confirmation: String) : Request()     // confirm a fixed sentence
+    data class FreeText(…, val maxLength: Int? = null) : Request()      // answer is free text only
 }
 
 data class Option(val id: String, val title: String)
+data class AppointmentSlot(val id: String, val from: Instant, val to: Instant)
 ```
 
-Options carry a stable `id`; responses reference ids, not titles, so a title can be reworded or
-localized without breaking the answer.
+Options and slots carry a stable `id`; responses reference ids, not titles, so a title can be reworded
+or localized without breaking the answer.
+
+- `Asset.document` names what is expected ("signed site plan"); `mimeTypes` restricts the file types
+  (e.g. `application/pdf`), empty means any. Natrium does not enforce `mimeTypes`; the answering UI does.
+- `Appointment` offers one or more slots; the other party picks exactly one.
+- `Acknowledge.confirmation` is the sentence the other party confirms ("I have taken note of the notice.").
 
 ### 2.3 Responses
 
@@ -72,7 +85,8 @@ sealed class Response {
     data class SingleSelect(val selectedOptionId: String) : Response()
     data class MultiSelect(val selectedOptionIds: List<String>) : Response()
     data class Asset(val attachmentMessageIds: List<String>) : Response()
-    data class Appointment(val accepted: Boolean) : Response()
+    data class Appointment(val selectedSlotId: String) : Response()
+    data object Acknowledge : Response()
     data class FreeText(val text: String, val attachmentMessageIds: List<String> = emptyList()) : Response()
 }
 ```
@@ -105,15 +119,19 @@ interface ChatOperations {
         attachments: List<FileLink> = emptyList(),
     ): SendMessageResult
 
+    // NEW — request with attachments
+    suspend fun sendRequest(request: Request, attachments: List<FileLink> = emptyList()): SendMessageResult
+
     // NEW — free text with attachments, without a request reference
     suspend fun sendText(text: String, attachments: List<FileLink> = emptyList()): SendMessageResult
 }
 ```
 
-- `sendMessage(RequestValue(...))` → JSON request.
+- `sendMessage(RequestValue(...))` → JSON request (ids in `attachmentMessageIds` are sent as they are).
+- `sendRequest(request, attachments)` → uploads `attachments` first, then sends the request referencing them.
 - `sendMessage(TextValue(text))` → JSON free text (no attachments; use `sendText` for those).
 - `sendMessage(ResponseValue(...))` → same as `sendResponse` without attachments.
-- `sendResponse(...)` / `sendText(...)` with `attachments`: each `FileLink` is uploaded as a file
+- `sendResponse(...)` / `sendText(...)` / `sendRequest(...)` with `attachments`: each `FileLink` is uploaded as a file
   message, the returned message ids are written into `attachmentMessageIds`, then the JSON message
   is sent. Ids already present in the passed `Response` are kept and the uploaded ones appended.
   If an upload fails, the JSON message is **not** sent and the upload failure is returned.
@@ -133,9 +151,10 @@ enum class InvalidResponseReason {
     NOT_A_REQUEST,            // referenced message is not a RequestValue
     ALREADY_ANSWERED,         // request already has answeredByMessageId
     TYPE_MISMATCH,            // e.g. MultiSelect response to a SingleSelect request
-    UNKNOWN_OPTION,           // selected id not in the request's options
+    UNKNOWN_OPTION,           // selected option/slot id not in the request
     EMPTY_SELECTION,          // MultiSelect with no ids
     MISSING_ATTACHMENTS,      // Asset response without attachments
+    TEXT_TOO_LONG,            // FreeText longer than FreeText request's maxLength
 }
 ```
 
@@ -146,7 +165,9 @@ Validation rules:
 | `SingleSelect` | `SingleSelect` (id ∈ options), `FreeText` |
 | `MultiSelect` | `MultiSelect` (≥ 1 id, all ∈ options, no duplicates), `FreeText` |
 | `Asset` | `Asset` (≥ 1 attachment), `FreeText` |
-| `Appointment` | `Appointment`, `FreeText` |
+| `Appointment` | `Appointment` (slot id ∈ slots), `FreeText` |
+| `Acknowledge` | `Acknowledge`, `FreeText` |
+| `FreeText` | `FreeText` (≤ `maxLength` if set) |
 
 ## 3. Wire format
 
@@ -182,10 +203,19 @@ With attachments:
 |---|---|
 | `SINGLE_SELECT` | `options` |
 | `MULTI_SELECT` | `options` |
-| `ASSET` | — |
-| `APPOINTMENT` | `from`, `to` (ISO-8601 instants) |
+| `ASSET` | `document` (optional), `mime_types` (optional list) |
+| `APPOINTMENT` | `slots` (`[{id, from, to}]`, ISO-8601 instants), `location` (optional) |
+| `ACKNOWLEDGE` | `confirmation` |
+| `FREE_TEXT` | `max_length` (optional) |
 
 Common fields: `subject` (default `""`), `message`, `deadline` (optional ISO-8601 instant).
+Files sent with the request are referenced in the envelope's top-level `attachments` (file message ids),
+as for free text:
+
+```json
+{"natrium":1,"type":"REQUEST","request":{"type":"ACKNOWLEDGE","message":"Bitte bestätigen Sie den Erhalt.",
+  "confirmation":"Ich habe den Bescheid zur Kenntnis genommen."},"attachments":["4f1c…"]}
+```
 
 ### 3.3 Response
 
@@ -200,7 +230,8 @@ Common fields: `subject` (default `""`), `message`, `deadline` (optional ISO-860
 | `SINGLE_SELECT` | `selected` (option id) |
 | `MULTI_SELECT` | `selected` (list of option ids) |
 | `ASSET` | `attachments` (file message ids) |
-| `APPOINTMENT` | `accepted` (boolean) |
+| `APPOINTMENT` | `selected` (slot id) |
+| `ACKNOWLEDGE` | — |
 | `FREE_TEXT` | `text`, `attachments` (optional) |
 
 The response message is additionally sent as a Wire reply quoting the request

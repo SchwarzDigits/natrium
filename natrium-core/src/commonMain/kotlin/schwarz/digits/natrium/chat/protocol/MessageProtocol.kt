@@ -49,7 +49,9 @@ internal object MessageProtocol {
         is MessageValue.TextValue ->
             json.encodeToString(TextEnvelope(VERSION, TYPE_TEXT, value.value, value.attachmentMessageIds))
         is MessageValue.RequestValue ->
-            json.encodeToString(RequestEnvelope(VERSION, TYPE_REQUEST, value.request.toDto()))
+            json.encodeToString(
+                RequestEnvelope(VERSION, TYPE_REQUEST, value.request.toDto(), value.attachmentMessageIds)
+            )
         is MessageValue.ResponseValue ->
             json.encodeToString(
                 ResponseEnvelope(VERSION, TYPE_RESPONSE, value.requestMessageId, value.response.toDto())
@@ -80,7 +82,7 @@ internal object MessageProtocol {
                     MessageValue.TextValue(it.text, it.attachments)
                 }
                 TYPE_REQUEST -> json.decodeFromJsonElement(RequestEnvelope.serializer(), obj).let {
-                    MessageValue.RequestValue(it.request.toDomain())
+                    MessageValue.RequestValue(it.request.toDomain(), it.attachments)
                 }
                 TYPE_RESPONSE -> json.decodeFromJsonElement(ResponseEnvelope.serializer(), obj).let {
                     MessageValue.ResponseValue(it.requestId, it.response.toDomain())

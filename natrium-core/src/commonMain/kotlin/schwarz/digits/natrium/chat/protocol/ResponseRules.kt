@@ -31,7 +31,10 @@ internal object ResponseRules {
      * uploaded before sending and therefore not yet part of the response's attachment ids.
      */
     fun validate(request: Request, response: Response, pendingAttachments: Int = 0): InvalidResponseReason? {
-        if (response is Response.FreeText) return null
+        if (response is Response.FreeText) {
+            val maxLength = (request as? Request.FreeText)?.maxLength
+            return if (maxLength != null && response.text.length > maxLength) InvalidResponseReason.TEXT_TOO_LONG else null
+        }
         return when (request) {
             is Request.SingleSelect -> when {
                 response !is Response.SingleSelect -> InvalidResponseReason.TYPE_MISMATCH
@@ -51,8 +54,15 @@ internal object ResponseRules {
                 response.attachmentMessageIds.size + pendingAttachments == 0 -> InvalidResponseReason.MISSING_ATTACHMENTS
                 else -> null
             }
-            is Request.Appointment ->
-                if (response !is Response.Appointment) InvalidResponseReason.TYPE_MISMATCH else null
+            is Request.Appointment -> when {
+                response !is Response.Appointment -> InvalidResponseReason.TYPE_MISMATCH
+                request.slots.none { it.id == response.selectedSlotId } -> InvalidResponseReason.UNKNOWN_OPTION
+                else -> null
+            }
+            is Request.Acknowledge ->
+                if (response !is Response.Acknowledge) InvalidResponseReason.TYPE_MISMATCH else null
+            // only Response.FreeText (handled above) answers a free-text request
+            is Request.FreeText -> InvalidResponseReason.TYPE_MISMATCH
         }
     }
 

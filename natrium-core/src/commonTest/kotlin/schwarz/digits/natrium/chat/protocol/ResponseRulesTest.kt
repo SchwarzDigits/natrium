@@ -1,6 +1,7 @@
 package schwarz.digits.natrium.chat.protocol
 
 import kotlinx.datetime.Instant
+import schwarz.digits.natrium.chat.AppointmentSlot
 import schwarz.digits.natrium.chat.ChatMessage
 import schwarz.digits.natrium.chat.InvalidResponseReason
 import schwarz.digits.natrium.chat.MessageStatus
@@ -22,13 +23,17 @@ class ResponseRulesTest {
     private val asset = Request.Asset(message = "?")
     private val appointment = Request.Appointment(
         message = "?",
-        from = Instant.parse("2026-11-20T09:00:00Z"),
-        to = Instant.parse("2026-11-20T09:30:00Z"),
+        slots = listOf(
+            AppointmentSlot("s1", Instant.parse("2026-11-20T09:00:00Z"), Instant.parse("2026-11-20T09:30:00Z")),
+            AppointmentSlot("s2", Instant.parse("2026-11-21T14:00:00Z"), Instant.parse("2026-11-21T14:30:00Z")),
+        ),
     )
+    private val acknowledge = Request.Acknowledge(message = "?", confirmation = "I have read it.")
+    private val freeText = Request.FreeText(message = "?", maxLength = 10)
 
     @Test
     fun freeTextIsValidForEveryRequest() {
-        listOf(single, multi, asset, appointment).forEach {
+        listOf(single, multi, asset, appointment, acknowledge, freeText).forEach {
             assertNull(ResponseRules.validate(it, Response.FreeText("question")))
         }
     }
@@ -54,13 +59,27 @@ class ResponseRulesTest {
         assertNull(ResponseRules.validate(asset, Response.Asset(listOf("file"))))
         assertNull(ResponseRules.validate(asset, Response.Asset(), pendingAttachments = 1))
         assertEquals(InvalidResponseReason.MISSING_ATTACHMENTS, ResponseRules.validate(asset, Response.Asset()))
-        assertEquals(InvalidResponseReason.TYPE_MISMATCH, ResponseRules.validate(asset, Response.Appointment(true)))
+        assertEquals(InvalidResponseReason.TYPE_MISMATCH, ResponseRules.validate(asset, Response.Appointment("s1")))
     }
 
     @Test
     fun appointment() {
-        assertNull(ResponseRules.validate(appointment, Response.Appointment(accepted = false)))
+        assertNull(ResponseRules.validate(appointment, Response.Appointment("s2")))
+        assertEquals(InvalidResponseReason.UNKNOWN_OPTION, ResponseRules.validate(appointment, Response.Appointment("x")))
         assertEquals(InvalidResponseReason.TYPE_MISMATCH, ResponseRules.validate(appointment, Response.SingleSelect("a")))
+    }
+
+    @Test
+    fun acknowledge() {
+        assertNull(ResponseRules.validate(acknowledge, Response.Acknowledge))
+        assertEquals(InvalidResponseReason.TYPE_MISMATCH, ResponseRules.validate(acknowledge, Response.SingleSelect("a")))
+    }
+
+    @Test
+    fun freeTextRequestOnlyTakesFreeTextWithinMaxLength() {
+        assertNull(ResponseRules.validate(freeText, Response.FreeText("1234567890")))
+        assertEquals(InvalidResponseReason.TEXT_TOO_LONG, ResponseRules.validate(freeText, Response.FreeText("12345678901")))
+        assertEquals(InvalidResponseReason.TYPE_MISMATCH, ResponseRules.validate(freeText, Response.Acknowledge))
     }
 
     @Test

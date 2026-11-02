@@ -20,6 +20,7 @@ package schwarz.digits.natrium.chat.protocol
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import schwarz.digits.natrium.chat.AppointmentSlot
 import schwarz.digits.natrium.chat.Option
 import schwarz.digits.natrium.chat.Request
 import schwarz.digits.natrium.chat.Response
@@ -40,6 +41,7 @@ internal data class RequestEnvelope(
     val natrium: Int,
     val type: String,
     val request: RequestDto,
+    val attachments: List<String> = emptyList(),
 )
 
 @Serializable
@@ -52,6 +54,9 @@ internal data class ResponseEnvelope(
 
 @Serializable
 internal data class OptionDto(val id: String, val title: String)
+
+@Serializable
+internal data class SlotDto(val id: String, val from: Instant, val to: Instant)
 
 @Serializable
 internal sealed interface RequestDto {
@@ -78,6 +83,8 @@ internal sealed interface RequestDto {
     data class Asset(
         val subject: String = "",
         val message: String,
+        val document: String = "",
+        @SerialName("mime_types") val mimeTypes: List<String> = emptyList(),
         val deadline: Instant? = null,
     ) : RequestDto
 
@@ -86,8 +93,26 @@ internal sealed interface RequestDto {
     data class Appointment(
         val subject: String = "",
         val message: String,
-        val from: Instant,
-        val to: Instant,
+        val slots: List<SlotDto>,
+        val location: String = "",
+        val deadline: Instant? = null,
+    ) : RequestDto
+
+    @Serializable
+    @SerialName("ACKNOWLEDGE")
+    data class Acknowledge(
+        val subject: String = "",
+        val message: String,
+        val confirmation: String,
+        val deadline: Instant? = null,
+    ) : RequestDto
+
+    @Serializable
+    @SerialName("FREE_TEXT")
+    data class FreeText(
+        val subject: String = "",
+        val message: String,
+        @SerialName("max_length") val maxLength: Int? = null,
         val deadline: Instant? = null,
     ) : RequestDto
 }
@@ -108,7 +133,11 @@ internal sealed interface ResponseDto {
 
     @Serializable
     @SerialName("APPOINTMENT")
-    data class Appointment(val accepted: Boolean) : ResponseDto
+    data class Appointment(val selected: String) : ResponseDto
+
+    @Serializable
+    @SerialName("ACKNOWLEDGE")
+    data object Acknowledge : ResponseDto
 
     @Serializable
     @SerialName("FREE_TEXT")
@@ -118,22 +147,27 @@ internal sealed interface ResponseDto {
 internal fun Request.toDto(): RequestDto = when (this) {
     is Request.SingleSelect -> RequestDto.SingleSelect(subject, message, options.map { it.toDto() }, deadline)
     is Request.MultiSelect -> RequestDto.MultiSelect(subject, message, options.map { it.toDto() }, deadline)
-    is Request.Asset -> RequestDto.Asset(subject, message, deadline)
-    is Request.Appointment -> RequestDto.Appointment(subject, message, from, to, deadline)
+    is Request.Asset -> RequestDto.Asset(subject, message, document, mimeTypes, deadline)
+    is Request.Appointment -> RequestDto.Appointment(subject, message, slots.map { it.toDto() }, location, deadline)
+    is Request.Acknowledge -> RequestDto.Acknowledge(subject, message, confirmation, deadline)
+    is Request.FreeText -> RequestDto.FreeText(subject, message, maxLength, deadline)
 }
 
 internal fun RequestDto.toDomain(): Request = when (this) {
     is RequestDto.SingleSelect -> Request.SingleSelect(subject, message, options.map { it.toDomain() }, deadline)
     is RequestDto.MultiSelect -> Request.MultiSelect(subject, message, options.map { it.toDomain() }, deadline)
-    is RequestDto.Asset -> Request.Asset(subject, message, deadline)
-    is RequestDto.Appointment -> Request.Appointment(subject, message, from, to, deadline)
+    is RequestDto.Asset -> Request.Asset(subject, message, document, mimeTypes, deadline)
+    is RequestDto.Appointment -> Request.Appointment(subject, message, slots.map { it.toDomain() }, location, deadline)
+    is RequestDto.Acknowledge -> Request.Acknowledge(subject, message, confirmation, deadline)
+    is RequestDto.FreeText -> Request.FreeText(subject, message, maxLength, deadline)
 }
 
 internal fun Response.toDto(): ResponseDto = when (this) {
     is Response.SingleSelect -> ResponseDto.SingleSelect(selectedOptionId)
     is Response.MultiSelect -> ResponseDto.MultiSelect(selectedOptionIds)
     is Response.Asset -> ResponseDto.Asset(attachmentMessageIds)
-    is Response.Appointment -> ResponseDto.Appointment(accepted)
+    is Response.Appointment -> ResponseDto.Appointment(selectedSlotId)
+    is Response.Acknowledge -> ResponseDto.Acknowledge
     is Response.FreeText -> ResponseDto.FreeText(text, attachmentMessageIds)
 }
 
@@ -141,9 +175,12 @@ internal fun ResponseDto.toDomain(): Response = when (this) {
     is ResponseDto.SingleSelect -> Response.SingleSelect(selected)
     is ResponseDto.MultiSelect -> Response.MultiSelect(selected)
     is ResponseDto.Asset -> Response.Asset(attachments)
-    is ResponseDto.Appointment -> Response.Appointment(accepted)
+    is ResponseDto.Appointment -> Response.Appointment(selected)
+    is ResponseDto.Acknowledge -> Response.Acknowledge
     is ResponseDto.FreeText -> Response.FreeText(text, attachments)
 }
 
 private fun Option.toDto() = OptionDto(id, title)
 private fun OptionDto.toDomain() = Option(id, title)
+private fun AppointmentSlot.toDto() = SlotDto(id, from, to)
+private fun SlotDto.toDomain() = AppointmentSlot(id, from, to)

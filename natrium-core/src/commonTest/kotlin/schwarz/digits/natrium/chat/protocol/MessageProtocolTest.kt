@@ -1,6 +1,7 @@
 package schwarz.digits.natrium.chat.protocol
 
 import kotlinx.datetime.Instant
+import schwarz.digits.natrium.chat.AppointmentSlot
 import schwarz.digits.natrium.chat.MessageValue
 import schwarz.digits.natrium.chat.Option
 import schwarz.digits.natrium.chat.Request
@@ -24,11 +25,17 @@ class MessageProtocolTest {
             Request.SingleSelect("Residence", "Is this your main residence?", options, deadline),
             Request.MultiSelect(message = "Which documents do you have?", options = options),
             Request.Asset("Documents", "Please upload your ID"),
+            Request.Asset(message = "Please upload the site plan", document = "Signed site plan", mimeTypes = listOf("application/pdf")),
             Request.Appointment(
                 message = "Appointment proposal",
-                from = Instant.parse("2026-11-20T09:00:00Z"),
-                to = Instant.parse("2026-11-20T09:30:00Z"),
+                slots = listOf(
+                    AppointmentSlot("s1", Instant.parse("2026-11-20T09:00:00Z"), Instant.parse("2026-11-20T09:30:00Z")),
+                    AppointmentSlot("s2", Instant.parse("2026-11-21T14:00:00Z"), Instant.parse("2026-11-21T14:30:00Z")),
+                ),
+                location = "Room 4",
             ),
+            Request.Acknowledge(message = "Please confirm", confirmation = "I have read the notice."),
+            Request.FreeText(message = "How many parking spaces?", maxLength = 1000, deadline = deadline),
         )
         requests.forEach { request ->
             assertEquals(MessageValue.RequestValue(request), roundTrip(MessageValue.RequestValue(request)))
@@ -41,13 +48,32 @@ class MessageProtocolTest {
             Response.SingleSelect("yes"),
             Response.MultiSelect(listOf("yes", "no")),
             Response.Asset(listOf("file-1", "file-2")),
-            Response.Appointment(accepted = true),
+            Response.Appointment("s1"),
+            Response.Acknowledge,
             Response.FreeText("Question back", listOf("file-3")),
         )
         responses.forEach { response ->
             val value = MessageValue.ResponseValue("request-1", response)
             assertEquals(value, roundTrip(value))
         }
+    }
+
+    @Test
+    fun roundTripsRequestWithAttachments() {
+        val value = MessageValue.RequestValue(Request.Asset(message = "Fill in the form"), listOf("file-1"))
+        assertEquals(value, roundTrip(value))
+    }
+
+    @Test
+    fun encodesNewTypesWireFormat() {
+        assertEquals(
+            """{"natrium":1,"type":"RESPONSE","request_id":"req-1","response":{"type":"ACKNOWLEDGE"}}""",
+            MessageProtocol.encode(MessageValue.ResponseValue("req-1", Response.Acknowledge)),
+        )
+        assertEquals(
+            """{"natrium":1,"type":"REQUEST","request":{"type":"FREE_TEXT","message":"?","max_length":10},"attachments":["f"]}""",
+            MessageProtocol.encode(MessageValue.RequestValue(Request.FreeText(message = "?", maxLength = 10), listOf("f"))),
+        )
     }
 
     @Test

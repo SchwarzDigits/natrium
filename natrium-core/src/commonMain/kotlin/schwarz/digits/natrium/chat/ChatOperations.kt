@@ -43,6 +43,12 @@ interface ChatOperations {
         attachments: List<FileLink> = emptyList(),
     ): SendMessageResult
 
+    /**
+     * Sends [request] with [attachments], uploaded as file messages before the request is sent;
+     * if an upload fails, the request is not sent.
+     */
+    suspend fun sendRequest(request: Request, attachments: List<FileLink> = emptyList()): SendMessageResult
+
     /** Sends free text with [attachments], uploaded as file messages before the text is sent. */
     suspend fun sendText(text: String, attachments: List<FileLink> = emptyList()): SendMessageResult
 }

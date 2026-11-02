@@ -62,7 +62,11 @@ sealed class MessageValue {
     ) : MessageValue()
     data class KnockValue(val hotKnock: Boolean) : MessageValue()
     data class SystemValue(val event: SystemEvent) : MessageValue()
-    data class RequestValue(val request: Request) : MessageValue()
+    /** A [Request]; [attachmentMessageIds] reference file messages sent along with it. */
+    data class RequestValue(
+        val request: Request,
+        val attachmentMessageIds: List<String> = emptyList(),
+    ) : MessageValue()
     data class ResponseValue(val requestMessageId: String, val response: Response) : MessageValue()
 
     /** Structured message from a newer protocol version or of an unknown type. */
