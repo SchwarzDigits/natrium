@@ -29,6 +29,11 @@ class BackendConfig(
     val blackList: String,
     val website: String,
     val isOnPremises: Boolean = true,
+    /**
+     * Base URL of case links (see [schwarz.digits.natrium.session.Session.generateCaseLink]), e.g.
+     * `https://authority.example/import`; null when the app does not use case links.
+     */
+    val caseLinkBase: String? = null,
 ) {
     internal val kaliumLinks: Links = Links(
         api = api,

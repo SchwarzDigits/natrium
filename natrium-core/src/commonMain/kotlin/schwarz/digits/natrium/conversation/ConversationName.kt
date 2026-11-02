@@ -14,6 +14,7 @@
  *
  * SPDX-License-Identifier: EUPL-1.2
  */
+
 package schwarz.digits.natrium.conversation
 
 import kotlinx.serialization.json.Json

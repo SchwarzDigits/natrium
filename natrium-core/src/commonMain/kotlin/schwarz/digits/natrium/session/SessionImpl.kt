@@ -35,6 +35,9 @@ import schwarz.digits.natrium.AuthEvent
 import schwarz.digits.natrium.BackendConfig
 import schwarz.digits.natrium.Cancellable
 import schwarz.digits.natrium.Natrium
+import schwarz.digits.natrium.caselink.CaseLink
+import schwarz.digits.natrium.caselink.CaseLinkCodec
+import schwarz.digits.natrium.caselink.GenerateCaseLinkResult
 import schwarz.digits.natrium.NatriumPlatform
 import schwarz.digits.natrium.conversation.ConversationManager
 import schwarz.digits.natrium.conversation.ConversationManagerImpl
@@ -77,6 +80,19 @@ internal class SessionImpl(
             backend = backendConfig.name,
             device = currentDevice
         )
+    }
+
+    override suspend fun generateCaseLink(): GenerateCaseLinkResult {
+        val base = backendConfig.caseLinkBase?.takeIf { it.isNotBlank() }
+            ?: return GenerateCaseLinkResult.Failure.NotConfigured
+        return try {
+            val self = sessionScope.users.getSelfUser() ?: return GenerateCaseLinkResult.Failure.NotLoggedIn
+            val ref = CaseLinkCodec.newRef()
+            val url = CaseLinkCodec.encode(base, CaseLinkCodec.Payload(UserId.fromWire(self.id), ref))
+            GenerateCaseLinkResult.Success(CaseLink(url, ref))
+        } catch (e: Exception) {
+            GenerateCaseLinkResult.Failure.Unknown(e.message ?: "Failed to generate case link", e)
+        }
     }
 
     override fun observeSessionInfo(listener: (SessionInfo) -> Unit): Cancellable {

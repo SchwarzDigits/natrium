@@ -19,8 +19,9 @@ No public API was removed or renamed; new parameters have defaults. What breaks:
   `else` over them no longer compiles.
 - ⚠️ **Own implementations of the interfaces** (fakes, mocks): `ChatOperations` gained
   `sendRequest`, `sendResponse`, `sendText`; `ConversationOperations` gained `setMetadata`;
+  `Session` gained `generateCaseLink`;
   `ConversationManager.createConversation` gained a `metadata` parameter. Callers are not affected.
-- Binary only: `TextValue` and `ConversationInfo` gained fields, which changes their constructor,
+- Binary only: `TextValue`, `ConversationInfo` and `BackendConfig` gained fields, which changes their constructor,
   `copy` and `componentN`; code compiled against `main` has to be recompiled.
 
 ### Structured requests & responses
@@ -59,3 +60,12 @@ No public API was removed or renamed; new parameters have defaults. What breaks:
   Wire clients show the raw envelope as the name.
 
 → [Conversations § 6a Metadata](./conversations.md#6a-metadata)
+
+### Case links
+
+- `BackendConfig.caseLinkBase: String? = null` — base URL of case links.
+- `Session.generateCaseLink(): GenerateCaseLinkResult` → `CaseLink(url, ref)`; every call
+  generates a new, unique `ref`.
+- Format: `<caseLinkBase>#<token>`, token = base64url of `{"v":1,"user":…,"ref":…}`.
+
+→ [Case Links](./case-links.md)

@@ -34,6 +34,7 @@ All public types are in the `schwarz.digits.natrium` package namespace.
 | `blackList` | `String` | — |
 | `website` | `String` | — |
 | `isOnPremises` | `Boolean` | `true` |
+| `caseLinkBase` | `String?` | `null` — base URL of case links, see [case-links.md](./case-links.md) |
 
 SDK consumers construct a `BackendConfig` with their server URLs and pass it to `Natrium.initialize()`.
 
@@ -66,6 +67,7 @@ Observe via `Natrium.observeAuthEvents(listener)`. Emitted on login and logout e
 | `suspend fun updateHandle(handle: String)` | `UpdateHandleResult` |
 | `suspend fun updateEmail(email: String)` | `UpdateEmailResult` |
 | `suspend fun logout()` | `LogoutResult` |
+| `suspend fun generateCaseLink()` | `GenerateCaseLinkResult` — `Success(CaseLink(url, ref))`, `Failure.NotConfigured`, `Failure.NotLoggedIn`, `Failure.Unknown` |
 
 ---
 

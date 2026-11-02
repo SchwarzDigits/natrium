@@ -18,6 +18,8 @@
 package schwarz.digits.natrium.session
 
 import schwarz.digits.natrium.Cancellable
+import schwarz.digits.natrium.caselink.CaseLink
+import schwarz.digits.natrium.caselink.GenerateCaseLinkResult
 import schwarz.digits.natrium.conversation.ConversationManager
 import schwarz.digits.natrium.devices.DeviceManager
 
@@ -31,4 +33,10 @@ interface Session {
     suspend fun updateHandle(handle: String): UpdateHandleResult
     suspend fun updateEmail(email: String): UpdateEmailResult
     suspend fun logout(): LogoutResult
+
+    /**
+     * Generates a case link for this user under [schwarz.digits.natrium.BackendConfig.caseLinkBase].
+     * Every call generates a new, unique [CaseLink.ref].
+     */
+    suspend fun generateCaseLink(): GenerateCaseLinkResult
 }
