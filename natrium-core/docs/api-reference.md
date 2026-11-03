@@ -67,7 +67,7 @@ Observe via `Natrium.observeAuthEvents(listener)`. Emitted on login and logout e
 | `suspend fun updateHandle(handle: String)` | `UpdateHandleResult` |
 | `suspend fun updateEmail(email: String)` | `UpdateEmailResult` |
 | `suspend fun logout()` | `LogoutResult` |
-| `suspend fun generateCaseLink()` | `GenerateCaseLinkResult` — `Success(CaseLink(url, ref))`, `Failure.NotConfigured`, `Failure.NotLoggedIn`, `Failure.Unknown` |
+| `suspend fun generateCaseLink(ref: String)` | `GenerateCaseLinkResult` — `Success(CaseLink(url, ref))`, `Failure.NotConfigured`, `Failure.InvalidRef`, `Failure.NotLoggedIn`, `Failure.Unknown` |
 
 ---
 

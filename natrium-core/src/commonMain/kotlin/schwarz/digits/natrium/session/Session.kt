@@ -35,8 +35,9 @@ interface Session {
     suspend fun logout(): LogoutResult
 
     /**
-     * Generates a case link for this user under [schwarz.digits.natrium.BackendConfig.caseLinkBase].
-     * Every call generates a new, unique [CaseLink.ref].
+     * Generates a case link for this user under [schwarz.digits.natrium.BackendConfig.caseLinkBase]
+     * that carries [ref] as [CaseLink.ref]. The app chooses the ref and keeps it unique: the same
+     * ref always yields the same link, and the receiving side treats it as the same case.
      */
-    suspend fun generateCaseLink(): GenerateCaseLinkResult
+    suspend fun generateCaseLink(ref: String): GenerateCaseLinkResult
 }

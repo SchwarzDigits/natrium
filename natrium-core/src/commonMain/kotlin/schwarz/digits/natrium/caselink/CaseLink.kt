@@ -19,8 +19,6 @@ package schwarz.digits.natrium.caselink
 
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
-import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -33,8 +31,9 @@ import schwarz.digits.natrium.users.UserId
  * A link that lets another party start a conversation with this user — e.g. attached to an
  * application, so the receiving side can open a case for it (see docs/case-links.md).
  *
- * [ref] is the link's unique id, generated anew for every link; the receiving side stores it to
- * find the conversation again when the same link is opened twice.
+ * [ref] is the link's id, chosen by the app (e.g. the id of the application the link is attached
+ * to); the receiving side stores it to find the conversation again when the same link is opened
+ * twice.
  */
 data class CaseLink(
     val url: String,
@@ -46,6 +45,8 @@ sealed class GenerateCaseLinkResult {
     sealed class Failure : GenerateCaseLinkResult() {
         /** [schwarz.digits.natrium.BackendConfig.caseLinkBase] is not set. */
         data object NotConfigured : Failure()
+        /** The ref passed to `generateCaseLink` is blank. */
+        data object InvalidRef : Failure()
         data object NotLoggedIn : Failure()
         data class Unknown(val message: String, val cause: Throwable? = null) : Failure()
     }
@@ -53,10 +54,10 @@ sealed class GenerateCaseLinkResult {
 
 /**
  * Link format: `<caseLinkBase>#<token>`, the token being base64url (no padding) of
- * `{"v":1,"user":"<value@domain>","ref":"<uuid>"}`. The token sits in the fragment, so it is not
+ * `{"v":1,"user":"<value@domain>","ref":"<ref>"}`. The token sits in the fragment, so it is not
  * sent to the server that serves the page.
  */
-@OptIn(ExperimentalEncodingApi::class, ExperimentalUuidApi::class)
+@OptIn(ExperimentalEncodingApi::class)
 internal object CaseLinkCodec {
 
     const val VERSION = 1
@@ -64,8 +65,6 @@ internal object CaseLinkCodec {
     private val base64 = Base64.UrlSafe.withPadding(Base64.PaddingOption.ABSENT_OPTIONAL)
 
     data class Payload(val user: UserId, val ref: String)
-
-    fun newRef(): String = Uuid.random().toString()
 
     fun encode(base: String, payload: Payload): String {
         val json = buildJsonObject {

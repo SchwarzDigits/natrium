@@ -82,12 +82,12 @@ internal class SessionImpl(
         )
     }
 
-    override suspend fun generateCaseLink(): GenerateCaseLinkResult {
+    override suspend fun generateCaseLink(ref: String): GenerateCaseLinkResult {
         val base = backendConfig.caseLinkBase?.takeIf { it.isNotBlank() }
             ?: return GenerateCaseLinkResult.Failure.NotConfigured
+        if (ref.isBlank()) return GenerateCaseLinkResult.Failure.InvalidRef
         return try {
             val self = sessionScope.users.getSelfUser() ?: return GenerateCaseLinkResult.Failure.NotLoggedIn
-            val ref = CaseLinkCodec.newRef()
             val url = CaseLinkCodec.encode(base, CaseLinkCodec.Payload(UserId.fromWire(self.id), ref))
             GenerateCaseLinkResult.Success(CaseLink(url, ref))
         } catch (e: Exception) {

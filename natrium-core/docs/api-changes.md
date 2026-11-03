@@ -64,8 +64,9 @@ No public API was removed or renamed; new parameters have defaults. What breaks:
 ### Case links
 
 - `BackendConfig.caseLinkBase: String? = null` — base URL of case links.
-- `Session.generateCaseLink(): GenerateCaseLinkResult` → `CaseLink(url, ref)`; every call
-  generates a new, unique `ref`.
+- `Session.generateCaseLink(ref: String): GenerateCaseLinkResult` → `CaseLink(url, ref)`; the app
+  passes the link's `ref` (its own id for the case), Natrium does not generate one.
+  `Failure.InvalidRef` for a blank `ref`.
 - Format: `<caseLinkBase>#<token>`, token = base64url of `{"v":1,"user":…,"ref":…}`.
 
 → [Case Links](./case-links.md)

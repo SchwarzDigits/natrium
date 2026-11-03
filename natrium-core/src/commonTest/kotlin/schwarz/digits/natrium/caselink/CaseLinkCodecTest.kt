@@ -3,7 +3,6 @@ package schwarz.digits.natrium.caselink
 import schwarz.digits.natrium.users.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -34,11 +33,5 @@ class CaseLinkCodecTest {
     fun rejectsForeignInput() {
         listOf("", "https://a.example/import", "#not-base64!", "e30", "eyJ2IjoyLCJ1c2VyIjoiYUBiIiwicmVmIjoiciJ9")
             .forEach { assertNull(CaseLinkCodec.decode(it), it) }
-    }
-
-    @Test
-    fun refsAreUnique() {
-        assertNotEquals(CaseLinkCodec.newRef(), CaseLinkCodec.newRef())
-        assertEquals(36, CaseLinkCodec.newRef().length)
     }
 }
