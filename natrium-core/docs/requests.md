@@ -361,11 +361,3 @@ the two can fail to send (the sender resends the missing one).
 - Ask for the update **once**, from `Session.observeUpdateRecommended`
   (`UpdateRecommended(supportedVersion, highestSeenVersion)`); it replays its state to late
   listeners.
-
-### 4.7 Checklist for a protocol change
-
-1. Can it be an optional field? → rule 1, done. Does it constrain answers? → receivers tolerate.
-2. Does an existing field change its meaning? → rule 2: new name next to the old, same ids.
-3. New request/response type? → rule 3; add it to the known types of both SDKs.
-4. None of that? → rule 4, raise `MessageProtocol.VERSION` / `PROTOCOL_VERSION` in both SDKs.
-5. Kotlin and natrium-web change in the same step, with the same JSON in both test suites.
