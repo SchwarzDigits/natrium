@@ -76,6 +76,8 @@ internal sealed interface RequestDto {
         val subject: String = "",
         val message: String,
         val options: List<OptionDto>,
+        @SerialName("min_selections") val minSelections: Int? = null,
+        @SerialName("max_selections") val maxSelections: Int? = null,
         val deadline: Instant? = null,
         val text: String = "",
     ) : RequestDto
@@ -152,7 +154,8 @@ internal sealed interface ResponseDto {
 
 internal fun Request.toDto(): RequestDto = when (this) {
     is Request.SingleSelect -> RequestDto.SingleSelect(subject, message, options.map { it.toDto() }, deadline, text)
-    is Request.MultiSelect -> RequestDto.MultiSelect(subject, message, options.map { it.toDto() }, deadline, text)
+    is Request.MultiSelect ->
+        RequestDto.MultiSelect(subject, message, options.map { it.toDto() }, minSelections, maxSelections, deadline, text)
     is Request.Asset -> RequestDto.Asset(subject, message, document, mimeTypes, deadline, text)
     is Request.Appointment -> RequestDto.Appointment(subject, message, slots.map { it.toDto() }, location, deadline, text)
     is Request.Acknowledge -> RequestDto.Acknowledge(subject, message, confirmation, deadline, text)
@@ -161,7 +164,8 @@ internal fun Request.toDto(): RequestDto = when (this) {
 
 internal fun RequestDto.toDomain(): Request = when (this) {
     is RequestDto.SingleSelect -> Request.SingleSelect(subject, message, options.map { it.toDomain() }, deadline, text)
-    is RequestDto.MultiSelect -> Request.MultiSelect(subject, message, options.map { it.toDomain() }, deadline, text)
+    is RequestDto.MultiSelect ->
+        Request.MultiSelect(subject, message, options.map { it.toDomain() }, deadline, text, minSelections, maxSelections)
     is RequestDto.Asset -> Request.Asset(subject, message, document, mimeTypes, deadline, text)
     is RequestDto.Appointment -> Request.Appointment(subject, message, slots.map { it.toDomain() }, location, deadline, text)
     is RequestDto.Acknowledge -> Request.Acknowledge(subject, message, confirmation, deadline, text)

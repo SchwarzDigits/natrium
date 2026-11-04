@@ -47,6 +47,9 @@ internal object ResponseRules {
                 response.selectedOptionIds.toSet().size != response.selectedOptionIds.size ||
                     response.selectedOptionIds.any { id -> request.options.none { it.id == id } } ->
                     InvalidResponseReason.UNKNOWN_OPTION
+                response.selectedOptionIds.size < (request.minSelections ?: 1) ||
+                    response.selectedOptionIds.size > (request.maxSelections ?: Int.MAX_VALUE) ->
+                    InvalidResponseReason.SELECTION_OUT_OF_RANGE
                 else -> null
             }
             is Request.Asset -> when {

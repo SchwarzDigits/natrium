@@ -250,7 +250,7 @@ Values: `PENDING`, `APPROVED`, `REJECTED`
 | Subclass | Additional fields |
 |----------|--------|
 | `SingleSelect` | `options: List<Option>` |
-| `MultiSelect` | `options: List<Option>` |
+| `MultiSelect` | `options: List<Option>`, `minSelections: Int?`, `maxSelections: Int?` |
 | `Asset` | — |
 | `Appointment` | `from: Instant`, `to: Instant` |
 
@@ -270,7 +270,7 @@ Values: `PENDING`, `APPROVED`, `REJECTED`
 ### InvalidResponseReason
 `enum schwarz.digits.natrium.chat.InvalidResponseReason`
 
-Values: `REQUEST_NOT_FOUND`, `NOT_A_REQUEST`, `ALREADY_ANSWERED`, `TYPE_MISMATCH`, `UNKNOWN_OPTION`, `EMPTY_SELECTION`, `MISSING_ATTACHMENTS`
+Values: `REQUEST_NOT_FOUND`, `NOT_A_REQUEST`, `ALREADY_ANSWERED`, `TYPE_MISMATCH`, `UNKNOWN_OPTION`, `EMPTY_SELECTION`, `SELECTION_OUT_OF_RANGE`, `MISSING_ATTACHMENTS`, `TEXT_TOO_LONG`
 
 ### SystemEvent
 `enum schwarz.digits.natrium.chat.SystemEvent`

@@ -39,12 +39,18 @@ sealed class Request {
         override val text: String = "",
     ) : Request()
 
+    /**
+     * The other party picks one or more [options]; [minSelections] and [maxSelections] optionally
+     * bound how many (without them: at least one, at most all).
+     */
     data class MultiSelect(
         override val subject: String = "",
         override val message: String,
         val options: List<Option>,
         override val deadline: Instant? = null,
         override val text: String = "",
+        val minSelections: Int? = null,
+        val maxSelections: Int? = null,
     ) : Request()
 
     /**
@@ -130,6 +136,8 @@ enum class InvalidResponseReason {
     EMPTY_SELECTION,
     /** A [Response.Asset] without any attachment. */
     MISSING_ATTACHMENTS,
+    /** A [Response.MultiSelect] with fewer than [Request.MultiSelect.minSelections] or more than [Request.MultiSelect.maxSelections] ids. */
+    SELECTION_OUT_OF_RANGE,
     /** A [Response.FreeText] longer than the [Request.FreeText.maxLength] of the request. */
     TEXT_TOO_LONG,
 }

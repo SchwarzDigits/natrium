@@ -61,7 +61,7 @@ sealed class Request {
     abstract val text: String
 
     data class SingleSelect(…, val options: List<Option>) : Request()
-    data class MultiSelect(…, val options: List<Option>) : Request()
+    data class MultiSelect(…, val options: List<Option>, val minSelections: Int? = null, val maxSelections: Int? = null) : Request()
     data class Asset(…, val document: String = "", val mimeTypes: List<String> = emptyList()) : Request()
     data class Appointment(…, val slots: List<AppointmentSlot>, val location: String = "") : Request()
     data class Acknowledge(…, val confirmation: String) : Request()     // confirm a fixed sentence
@@ -77,6 +77,8 @@ or localized without breaking the answer.
 
 - `Asset.document` names what is expected ("signed site plan"); `mimeTypes` restricts the file types
   (e.g. `application/pdf`), empty means any. Natrium does not enforce `mimeTypes`; the answering UI does.
+- `MultiSelect.minSelections` / `maxSelections` optionally bound how many options the other party picks;
+  without them it is at least one and at most all.
 - `Appointment` offers one or more slots; the other party picks exactly one.
 - `Acknowledge.confirmation` is the sentence the other party confirms ("I have taken note of the notice.").
 
@@ -155,6 +157,7 @@ enum class InvalidResponseReason {
     TYPE_MISMATCH,            // e.g. MultiSelect response to a SingleSelect request
     UNKNOWN_OPTION,           // selected option/slot id not in the request
     EMPTY_SELECTION,          // MultiSelect with no ids
+    SELECTION_OUT_OF_RANGE,   // MultiSelect with fewer than minSelections or more than maxSelections ids
     MISSING_ATTACHMENTS,      // Asset response without attachments
     TEXT_TOO_LONG,            // FreeText longer than FreeText request's maxLength
 }
@@ -165,7 +168,7 @@ Validation rules:
 | Request | Accepted responses |
 |---|---|
 | `SingleSelect` | `SingleSelect` (id ∈ options), `FreeText` |
-| `MultiSelect` | `MultiSelect` (≥ 1 id, all ∈ options, no duplicates), `FreeText` |
+| `MultiSelect` | `MultiSelect` (≥ 1 id, all ∈ options, no duplicates, count within `minSelections`–`maxSelections` if set), `FreeText` |
 | `Asset` | `Asset` (≥ 1 attachment), `FreeText` |
 | `Appointment` | `Appointment` (slot id ∈ slots), `FreeText` |
 | `Acknowledge` | `Acknowledge`, `FreeText` |
@@ -204,7 +207,7 @@ With attachments:
 | `request.type` | Additional fields |
 |---|---|
 | `SINGLE_SELECT` | `options` |
-| `MULTI_SELECT` | `options` |
+| `MULTI_SELECT` | `options`, `min_selections` / `max_selections` (optional) |
 | `ASSET` | `document` (optional), `mime_types` (optional list) |
 | `APPOINTMENT` | `slots` (`[{id, from, to}]`, ISO-8601 instants), `location` (optional) |
 | `ACKNOWLEDGE` | `confirmation` |

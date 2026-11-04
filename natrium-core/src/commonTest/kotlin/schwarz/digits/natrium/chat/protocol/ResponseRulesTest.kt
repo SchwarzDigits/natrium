@@ -51,6 +51,9 @@ class ResponseRulesTest {
         assertEquals(InvalidResponseReason.EMPTY_SELECTION, ResponseRules.validate(multi, Response.MultiSelect(emptyList())))
         assertEquals(InvalidResponseReason.UNKNOWN_OPTION, ResponseRules.validate(multi, Response.MultiSelect(listOf("a", "x"))))
         assertEquals(InvalidResponseReason.UNKNOWN_OPTION, ResponseRules.validate(multi, Response.MultiSelect(listOf("a", "a"))))
+        val bounded = multi.copy(minSelections = 2, maxSelections = 2)
+        assertNull(ResponseRules.validate(bounded, Response.MultiSelect(listOf("a", "b"))))
+        assertEquals(InvalidResponseReason.SELECTION_OUT_OF_RANGE, ResponseRules.validate(bounded, Response.MultiSelect(listOf("a"))))
         assertEquals(InvalidResponseReason.TYPE_MISMATCH, ResponseRules.validate(multi, Response.SingleSelect("a")))
     }
 

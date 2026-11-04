@@ -29,7 +29,7 @@ No public API was removed or renamed; new parameters have defaults. What breaks:
 - New message values: `MessageValue.RequestValue(request, attachmentMessageIds)`,
   `ResponseValue(requestMessageId, response)` and `UnsupportedValue(protocolVersion, type)`
   (newer or unknown content → "please update the app").
-- `Request` types: `SingleSelect`, `MultiSelect` (`options`), `Appointment` (`slots`, `location`),
+- `Request` types: `SingleSelect`, `MultiSelect` (`options`, optional `minSelections`/`maxSelections`), `Appointment` (`slots`, `location`),
   `Asset` (`document`, `mimeTypes`), `Acknowledge` (`confirmation`), `FreeText` (`maxLength`).
   Every request has `message` (the question), `text` (accompanying message), `subject` and
   `deadline`.

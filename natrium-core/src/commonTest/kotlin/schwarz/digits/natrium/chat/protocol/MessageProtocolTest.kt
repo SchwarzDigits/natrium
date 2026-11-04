@@ -24,6 +24,7 @@ class MessageProtocolTest {
         val requests = listOf(
             Request.SingleSelect("Residence", "Is this your main residence?", options, deadline),
             Request.MultiSelect(message = "Which documents do you have?", options = options),
+            Request.MultiSelect(message = "Which materials?", options = options, minSelections = 1, maxSelections = 2),
             Request.Asset("Documents", "Please upload your ID"),
             Request.Asset(message = "Please upload the site plan", document = "Signed site plan", mimeTypes = listOf("application/pdf")),
             Request.Appointment(
