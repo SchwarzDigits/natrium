@@ -44,7 +44,7 @@ No public API was removed or renamed; new parameters have defaults. What breaks:
 - `Session.observeUpdateRecommended(listener)` → `UpdateRecommended(supportedVersion,
   highestSeenVersion)`: fires once newer protocol content (higher version, unknown type) arrived,
   so the app can ask for an update once instead of at every `UnsupportedValue`. Compatibility rules
-  for future protocol changes: [requests.md 3.6](./requests.md#36-versioning--compatibility).
+  for future protocol changes: [requests.md 4](./requests.md#4-versioning-strategy).
 - ⚠️ Every text message Natrium sends is a JSON envelope (`{"natrium":1,"type":"TEXT",…}`), free
   text included. Plain text from other clients still arrives as `TextValue`; other Wire clients
   show the raw JSON.

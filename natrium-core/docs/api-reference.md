@@ -63,7 +63,7 @@ Observe via `Natrium.observeAuthEvents(listener)`. Emitted on login and logout e
 | `val deviceManager` | `DeviceManager` |
 | `suspend fun sessionInfo()` | `SessionInfo?` |
 | `fun observeSessionInfo(listener)` | `listener: (SessionInfo) -> Unit` → `Cancellable` |
-| `fun observeUpdateRecommended(listener)` | `listener: (UpdateRecommended) -> Unit` → `Cancellable` — newer protocol content arrived ([requests.md 3.6](./requests.md#36-versioning--compatibility)); replays the current state |
+| `fun observeUpdateRecommended(listener)` | `listener: (UpdateRecommended) -> Unit` → `Cancellable` — newer protocol content arrived ([requests.md 4](./requests.md#4-versioning-strategy)); replays the current state |
 | `suspend fun updateDisplayName(name: String)` | `UpdateDisplayNameResult` |
 | `suspend fun updateHandle(handle: String)` | `UpdateHandleResult` |
 | `suspend fun updateEmail(email: String)` | `UpdateEmailResult` |

@@ -24,7 +24,7 @@ derives whether a request has been answered. Apps only see typed `MessageValue`s
 | Answered state | Natrium derives it and exposes `ChatMessage.answeredByMessageId`. |
 | Role checks | None in Natrium. Requests sent by the wrong side are filtered by the authority client. |
 | Unknown content | Newer protocol version or unknown type → `MessageValue.UnsupportedValue`, and `Session.observeUpdateRecommended` fires once so the app can ask for an update. |
-| Evolution | Extend, don't change: see [3.6](#36-versioning--compatibility). |
+| Evolution | Extend, don't change: see [4. Versioning strategy](#4-versioning-strategy). |
 
 ## 2. Public API
 
@@ -256,41 +256,121 @@ Cases 2 and 3 — content only a newer Natrium writes — also report to
 `Session.observeUpdateRecommended` (`UpdateRecommended(supportedVersion, highestSeenVersion)`).
 Case 4 does not: a broken message is not a reason to update.
 
-### 3.6 Versioning & compatibility
-
-Natrium controls the SDKs, not the apps built on them: an authority's web client may be a version
-ahead of a citizen's app for a long time, in both directions. The protocol therefore evolves by
-these rules:
-
-1. **Extend, don't change.** New optional fields are simply added; older readers ignore them
-   (rule 5 above) — no version bump. A field never changes its meaning or shape.
-2. **A changed meaning gets a new name.** If a field has to be read differently, the new form is
-   sent under a new name next to the old one (`message` and `messageV2`) for a transition period.
-   Newer readers prefer the new field, older ones keep reading the old. Once no supported client
-   reads the old field any more, it is dropped and only the new one remains.
-3. **Ids stay stable.** Options and slots keep their ids across old and new fields, so a response
-   written against either form references the same thing.
-4. **A full reorganisation sends two messages.** If nothing else works, the sender sends the
-   request once as `"natrium":1` and once as `"natrium":2`, the second with
-   `"supersedes":"<id of the first>"`. A reader shows the version it knows: an older one the first
-   (the second becomes `UnsupportedValue`, and `observeUpdateRecommended` fires); a newer one hides
-   the superseded message and maps responses to it onto its successor. The cost: both messages count
-   as unread and may notify twice — acceptable for the rare reorganisation, not for routine changes.
-5. **Constraints are advisory for older peers.** A new field that restricts the answer (e.g.
-   `min_selections`) is ignored by older readers, so the receiving side must accept an answer that
-   breaks it and may flag it — never reject or drop it.
-
-**For apps:** do not render each `UnsupportedValue` as a "please update" bubble — after a
-reorganisation (rule 4) the user would see every message twice. Hide them or show a quiet
-placeholder, and ask for the update once from `observeUpdateRecommended`.
-
 ### 3.5 Quote previews
 
 `QuotedMessage.previewText` for a quoted Natrium message is derived from the parsed value instead
 of the raw JSON: request → `subject` (or `message` if empty), free text and free-text response → `text`,
 other responses and unsupported messages → `null`.
 
-## 4. Open points
+## 4. Versioning strategy
+
+**Status:** agreed 2026-11-04, sketch. Rules 1–3 and the update signal are in force; rule 4 is
+the plan for a change that does not exist yet.
+
+### 4.1 Situation
+
+Natrium owns the SDKs and the wire format, not the apps built on them. The authority's web client
+(natrium-web) updates with every deploy; a citizen's app updates when its user lets it. For a long
+time two parties of one conversation will speak different protocol revisions, in both directions.
+Every change has to keep three things working: an **older reader** must still show what it can, an
+**older answerer** must still produce answers the newer side accepts, and nobody may lose a
+message.
+
+What is deliberately **not** done: no embedded fallback copies in one message (they would roughly
+double a message carrying a long letter in `text`), no capability handshake, no sub-version field.
+
+### 4.2 Rule 1 — extend, don't change
+
+New optional fields are simply added; older readers ignore unknown fields (3.4 rule 5). No version
+bump. A field never changes its meaning or its shape.
+
+```json
+{"natrium":1,"type":"REQUEST","request":{
+  "type":"MULTI_SELECT",
+  "message":"Welche Materialien verwenden Sie?",
+  "options":[{"id":"o1","title":"Holz"},{"id":"o2","title":"Stahl"},{"id":"o3","title":"Glas"}],
+  "min_selections":2
+}}
+```
+
+An older reader shows the question without the bound.
+
+**Constraints are advisory for older peers.** A new field that restricts the answer (like
+`min_selections`) may be broken by an older answerer, who never saw it:
+
+```json
+{"natrium":1,"type":"RESPONSE","request_id":"req-42","response":{"type":"MULTI_SELECT","selected":["o1"]}}
+```
+
+The receiving side accepts such an answer and may flag it ("outside the bounds") — it never rejects
+or drops it. `sendResponse` enforces constraints only for the sender's own answers.
+
+### 4.3 Rule 2 — a changed meaning gets a new name
+
+If a field has to be read differently, the new form travels under a new name **next to** the old
+one for a transition period. Newer readers prefer the new field; older ones keep reading the old.
+
+```json
+{"natrium":1,"type":"REQUEST","request":{
+  "type":"APPOINTMENT",
+  "message":"Wann passt Ihnen der Ortstermin?",
+  "slots":  [{"id":"s1","from":"2026-11-11T09:00:00Z","to":"2026-11-11T09:30:00Z"}],
+  "slots_v2":[{"id":"s1","start":"2026-11-11T09:00:00Z","minutes":30,"location":"Lindenweg 4"}]
+}}
+```
+
+- **Ids stay stable** across both forms (`s1` in both), so an answer `{"selected":"s1"}` written
+  against either form means the same slot.
+- Only the renamed field is duplicated, and only during the transition — `text` (the letter) never
+  should be.
+- Once no supported client reads the old field any more, it is dropped and only `slots_v2`
+  remains. When that is, is decided by time and the apps' minimum store version; the protocol
+  does not tell.
+
+### 4.4 Rule 3 — new types
+
+A new request or response type is added within the current version. Older readers get
+`UnsupportedValue(1, "REQUEST")` for it and `Session.observeUpdateRecommended` fires (3.4).
+Free text still answers every request, so a sender that knows the peer cannot read the new type
+can choose an existing one instead.
+
+### 4.5 Rule 4 — a full reorganisation sends two messages
+
+Only when rules 1–3 cannot express a change. The sender sends the content twice: first in the old
+version, then in the new one, which names the first:
+
+```json
+{"natrium":1,"type":"REQUEST","request":{"type":"SINGLE_SELECT","message":"…","options":[…]}}
+```
+```json
+{"natrium":2,"type":"REQUEST","supersedes":"<message id of the first>","request":{…new shape…}}
+```
+
+| Reader | Sees |
+|---|---|
+| version 1 | the first message; the second is `UnsupportedValue` and fires `observeUpdateRecommended` |
+| version 2 | the second; hides the superseded first and maps responses to it onto the second |
+
+Costs, accepted for the rare case: both messages count as unread and may notify twice, and one of
+the two can fail to send (the sender resends the missing one).
+
+### 4.6 What apps do
+
+- Do **not** render every `UnsupportedValue` as a "please update" bubble: after a reorganisation
+  every message would appear twice. Hide it or show a quiet placeholder.
+- Ask for the update **once**, from `Session.observeUpdateRecommended`
+  (`UpdateRecommended(supportedVersion, highestSeenVersion)`); it replays its state to late
+  listeners.
+
+### 4.7 Checklist for a protocol change
+
+1. Can it be an optional field? → rule 1, done. Does it constrain answers? → receivers tolerate.
+2. Does an existing field change its meaning? → rule 2: new name next to the old, same ids.
+3. New request/response type? → rule 3; add it to the known types of both SDKs.
+4. None of that? → rule 4, raise `MessageProtocol.VERSION` / `PROTOCOL_VERSION` in both SDKs.
+5. Kotlin and natrium-web change in the same step, with the same JSON in both test suites.
+
+## 5. Open points
 
 - **Max text length:** the maximum Wire text message size still has to be verified in Kalium. Long
   requests (many options, long `message`) may need a limit check → `Failure.Unknown`/new branch.
