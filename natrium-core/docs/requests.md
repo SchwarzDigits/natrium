@@ -264,8 +264,8 @@ other responses and unsupported messages → `null`.
 
 ## 4. Versioning strategy
 
-**Status:** agreed 2026-11-04, sketch. Rules 1–3 and the update signal are in force; rule 4 is
-the plan for a change that does not exist yet.
+Rules 1–3 and the update signal apply today; rule 4 describes how a future reorganisation of the
+format will be rolled out.
 
 ### 4.1 Situation
 
@@ -369,16 +369,3 @@ the two can fail to send (the sender resends the missing one).
 3. New request/response type? → rule 3; add it to the known types of both SDKs.
 4. None of that? → rule 4, raise `MessageProtocol.VERSION` / `PROTOCOL_VERSION` in both SDKs.
 5. Kotlin and natrium-web change in the same step, with the same JSON in both test suites.
-
-## 5. Open points
-
-- **Max text length:** the maximum Wire text message size still has to be verified in Kalium. Long
-  requests (many options, long `message`) may need a limit check → `Failure.Unknown`/new branch.
-- **Editing / deleting** a request or response is not covered. A deleted request makes its
-  responses reference an unknown id (receiver: response is still shown, request lookup fails).
-- **Payment** is intentionally not part of Natrium (needs a payment provider outside messaging).
-- **Answered check on send:** `sendResponse` looks for existing responses in the 500 most recent
-  messages of the conversation. A response older than that window is not detected.
-- **History windows:** `getHistory` pages may contain a request without its response (response is
-  newer and therefore in the live window). Apps merging pages should take `answeredByMessageId`
-  from the most recent snapshot.
