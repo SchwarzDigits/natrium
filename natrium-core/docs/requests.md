@@ -23,7 +23,8 @@ derives whether a request has been answered. Apps only see typed `MessageValue`s
 | Attachments | Files are sent as regular file messages first; the JSON references their message ids. Natrium does the upload-then-reference sequence internally. |
 | Answered state | Natrium derives it and exposes `ChatMessage.answeredByMessageId`. |
 | Role checks | None in Natrium. Requests sent by the wrong side are filtered by the authority client. |
-| Unknown content | Newer protocol version or unknown type → `MessageValue.UnsupportedValue` (UI: "please update the app"). |
+| Unknown content | Newer protocol version or unknown type → `MessageValue.UnsupportedValue`, and `Session.observeUpdateRecommended` fires once so the app can ask for an update. |
+| Evolution | Extend, don't change: see [3.6](#36-versioning--compatibility). |
 
 ## 2. Public API
 
@@ -250,6 +251,38 @@ The response message is additionally sent as a Wire reply quoting the request
 3. Unknown top-level `type` or unknown `request.type` / `response.type` → `UnsupportedValue`.
 4. Malformed known type (missing required field, wrong type) → `UnsupportedValue`.
 5. Unknown **additional** fields are ignored (forward compatible within a version).
+
+Cases 2 and 3 — content only a newer Natrium writes — also report to
+`Session.observeUpdateRecommended` (`UpdateRecommended(supportedVersion, highestSeenVersion)`).
+Case 4 does not: a broken message is not a reason to update.
+
+### 3.6 Versioning & compatibility
+
+Natrium controls the SDKs, not the apps built on them: an authority's web client may be a version
+ahead of a citizen's app for a long time, in both directions. The protocol therefore evolves by
+these rules:
+
+1. **Extend, don't change.** New optional fields are simply added; older readers ignore them
+   (rule 5 above) — no version bump. A field never changes its meaning or shape.
+2. **A changed meaning gets a new name.** If a field has to be read differently, the new form is
+   sent under a new name next to the old one (`message` and `messageV2`) for a transition period.
+   Newer readers prefer the new field, older ones keep reading the old. Once no supported client
+   reads the old field any more, it is dropped and only the new one remains.
+3. **Ids stay stable.** Options and slots keep their ids across old and new fields, so a response
+   written against either form references the same thing.
+4. **A full reorganisation sends two messages.** If nothing else works, the sender sends the
+   request once as `"natrium":1` and once as `"natrium":2`, the second with
+   `"supersedes":"<id of the first>"`. A reader shows the version it knows: an older one the first
+   (the second becomes `UnsupportedValue`, and `observeUpdateRecommended` fires); a newer one hides
+   the superseded message and maps responses to it onto its successor. The cost: both messages count
+   as unread and may notify twice — acceptable for the rare reorganisation, not for routine changes.
+5. **Constraints are advisory for older peers.** A new field that restricts the answer (e.g.
+   `min_selections`) is ignored by older readers, so the receiving side must accept an answer that
+   breaks it and may flag it — never reject or drop it.
+
+**For apps:** do not render each `UnsupportedValue` as a "please update" bubble — after a
+reorganisation (rule 4) the user would see every message twice. Hide them or show a quiet
+placeholder, and ask for the update once from `observeUpdateRecommended`.
 
 ### 3.5 Quote previews
 

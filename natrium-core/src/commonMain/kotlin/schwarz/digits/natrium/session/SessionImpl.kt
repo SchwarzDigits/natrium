@@ -31,6 +31,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.filterNotNull
 import schwarz.digits.natrium.AuthEvent
 import schwarz.digits.natrium.BackendConfig
 import schwarz.digits.natrium.Cancellable
@@ -38,6 +39,7 @@ import schwarz.digits.natrium.Natrium
 import schwarz.digits.natrium.caselink.CaseLink
 import schwarz.digits.natrium.caselink.CaseLinkCodec
 import schwarz.digits.natrium.caselink.GenerateCaseLinkResult
+import schwarz.digits.natrium.chat.protocol.ProtocolUpdates
 import schwarz.digits.natrium.NatriumPlatform
 import schwarz.digits.natrium.conversation.ConversationManager
 import schwarz.digits.natrium.conversation.ConversationManagerImpl
@@ -110,6 +112,13 @@ internal class SessionImpl(
                         )
                     )
                 }
+        }
+        return Cancellable(job)
+    }
+
+    override fun observeUpdateRecommended(listener: (UpdateRecommended) -> Unit): Cancellable {
+        val job = scope.launch {
+            ProtocolUpdates.updates.filterNotNull().collect { listener(it) }
         }
         return Cancellable(job)
     }

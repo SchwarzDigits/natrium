@@ -29,6 +29,14 @@ interface Session {
 
     suspend fun sessionInfo(): SessionInfo?
     fun observeSessionInfo(listener: (SessionInfo) -> Unit): Cancellable
+
+    /**
+     * Called once newer content than this version can read has arrived, and again whenever an even
+     * newer version shows up; a listener added later gets the current state at once. Use it to ask
+     * the user to update the app — once, rather than at every
+     * [schwarz.digits.natrium.chat.MessageValue.UnsupportedValue].
+     */
+    fun observeUpdateRecommended(listener: (UpdateRecommended) -> Unit): Cancellable
     suspend fun updateDisplayName(name: String): UpdateDisplayNameResult
     suspend fun updateHandle(handle: String): UpdateHandleResult
     suspend fun updateEmail(email: String): UpdateEmailResult

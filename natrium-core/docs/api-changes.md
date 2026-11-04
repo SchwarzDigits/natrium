@@ -19,7 +19,7 @@ No public API was removed or renamed; new parameters have defaults. What breaks:
   `else` over them no longer compiles.
 - ⚠️ **Own implementations of the interfaces** (fakes, mocks): `ChatOperations` gained
   `sendRequest`, `sendResponse`, `sendText`; `ConversationOperations` gained `setMetadata`;
-  `Session` gained `generateCaseLink`;
+  `Session` gained `generateCaseLink` and `observeUpdateRecommended`;
   `ConversationManager.createConversation` gained a `metadata` parameter. Callers are not affected.
 - Binary only: `TextValue`, `ConversationInfo` and `BackendConfig` gained fields, which changes their constructor,
   `copy` and `componentN`; code compiled against `main` has to be recompiled.
@@ -41,6 +41,10 @@ No public API was removed or renamed; new parameters have defaults. What breaks:
   attachments are uploaded as file messages first and referenced by id.
 - `SendMessageResult.Failure.InvalidResponse(reason)` with `InvalidResponseReason`.
 - `TextValue.attachmentMessageIds`.
+- `Session.observeUpdateRecommended(listener)` → `UpdateRecommended(supportedVersion,
+  highestSeenVersion)`: fires once newer protocol content (higher version, unknown type) arrived,
+  so the app can ask for an update once instead of at every `UnsupportedValue`. Compatibility rules
+  for future protocol changes: [requests.md 3.6](./requests.md#36-versioning--compatibility).
 - ⚠️ Every text message Natrium sends is a JSON envelope (`{"natrium":1,"type":"TEXT",…}`), free
   text included. Plain text from other clients still arrives as `TextValue`; other Wire clients
   show the raw JSON.

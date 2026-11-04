@@ -38,6 +38,9 @@ internal object MessageProtocol {
     private const val TYPE_REQUEST = "REQUEST"
     private const val TYPE_RESPONSE = "RESPONSE"
 
+    /** The `request.type` / `response.type` values this version knows; anything else is newer. */
+    private val KNOWN_KINDS = setOf("SINGLE_SELECT", "MULTI_SELECT", "ASSET", "APPOINTMENT", "ACKNOWLEDGE", "FREE_TEXT")
+
     private val json = Json {
         ignoreUnknownKeys = true
         encodeDefaults = false
@@ -74,7 +77,10 @@ internal object MessageProtocol {
 
         val version = obj["natrium"]?.primitiveOrNull()?.intOrNull ?: return MessageValue.TextValue(text)
         val type = obj["type"]?.primitiveOrNull()?.contentOrNull
-        if (version > VERSION) return MessageValue.UnsupportedValue(version, type)
+        if (version > VERSION || isNewer(obj, type)) {
+            ProtocolUpdates.report(version)
+            return MessageValue.UnsupportedValue(version, type)
+        }
 
         return try {
             when (type) {
@@ -94,6 +100,21 @@ internal object MessageProtocol {
         } catch (_: IllegalArgumentException) {
             MessageValue.UnsupportedValue(version, type)
         }
+    }
+
+    /**
+     * Content of this version that only a newer Natrium writes: an unknown envelope type, or an
+     * unknown request or response type. (A known type with a broken field is not newer, just broken.)
+     */
+    private fun isNewer(obj: JsonObject, type: String?): Boolean {
+        val inner = when (type) {
+            TYPE_TEXT -> return false
+            TYPE_REQUEST -> obj["request"]
+            TYPE_RESPONSE -> obj["response"]
+            else -> return true
+        }
+        val kind = (inner as? JsonObject)?.get("type")?.primitiveOrNull()?.contentOrNull ?: return false
+        return kind !in KNOWN_KINDS
     }
 
     /** Human-readable preview of a text message, e.g. for quotes. */
