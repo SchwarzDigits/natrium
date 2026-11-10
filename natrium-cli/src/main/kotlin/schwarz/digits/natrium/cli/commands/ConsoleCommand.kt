@@ -561,4 +561,7 @@ private fun ChatMessage.displayText(): String = when (val v = value) {
     is MessageValue.LocationValue -> "[Location: ${v.name ?: "${v.latitude}, ${v.longitude}"}]"
     is MessageValue.KnockValue -> "[Knock]"
     is MessageValue.SystemValue -> systemText ?: "[System]"
+    is MessageValue.RequestValue -> "[Request: ${v.request.subject.ifEmpty { v.request.message }}]"
+    is MessageValue.ResponseValue -> "[Response to ${v.requestMessageId}]"
+    is MessageValue.UnsupportedValue -> "[Unsupported message]"
 }

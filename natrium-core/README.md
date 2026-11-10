@@ -49,10 +49,13 @@ After `Natrium.login(...)` you hold a `Session` that exposes:
 | [Getting Started](./docs/getting-started.md) | Install the dependency, initialize Natrium, perform a first login. |
 | [Concepts](./docs/concepts.md) | Object hierarchy, the callback+`Cancellable` pattern, sealed result types, lifecycle, threading, storage. |
 | [Authentication](./docs/authentication.md) | Email/password login, 2FA, SSO (email-initiated and direct-code), session restoration, auth events, logout, profile updates, device-limit recovery. |
-| [Conversations](./docs/conversations.md) | List, find, create, join, delete conversations; members; join links. |
+| [Conversations](./docs/conversations.md) | List, find, create, join, delete conversations; app metadata; members; join links. |
 | [Messaging](./docs/messaging.md) | Text, files, replies, reactions, observing messages and typing, file downloads, history, system events. |
+| [Case Links](./docs/case-links.md) | Links that let another party open a conversation (a case) with this user; configuration and format. |
+| [Requests & Responses](./docs/requests.md) | Structured requests (select, upload, appointment, acknowledgement, free text) and typed responses on top of text messages; wire format and validation. |
 | [Platforms](./docs/platforms.md) | Android, iOS, and JVM specifics — storage locations, lifecycle wiring, user-agent. |
 | [API Reference](./docs/api-reference.md) | Full method/parameter/result-type listing — the source of truth for signatures. |
+| [API Changes](./docs/api-changes.md) | API changes per version, newest first, with links to the full documentation. |
 
 If you've never used Natrium before, read in this order: **Getting Started → Concepts → Authentication → Conversations → Messaging**. Pull up the API Reference as a side-channel when you need exact signatures or the complete list of failure branches.
 

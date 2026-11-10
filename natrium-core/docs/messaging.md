@@ -22,6 +22,7 @@ when (val r = chat.sendMessage(MessageValue.TextValue("Hello"))) {
     SendMessageResult.Failure.RestrictedFileType   -> showError("That kind of attachment isn't allowed.")
     is SendMessageResult.Failure.FileTooLarge      ->
         showError("File too large (limit ${r.limitBytes / 1024 / 1024} MB).")
+    is SendMessageResult.Failure.InvalidResponse   -> Unit   // only for responses, see requests.md
     is SendMessageResult.Failure.Unknown           -> showError(r.message)
 }
 ```
@@ -50,6 +51,7 @@ suspend fun sendFile(chat: ChatOperations, path: Path, fileName: String, mimeTyp
         SendMessageResult.Failure.RestrictedFileType -> showError("This file type isn't allowed.")
         is SendMessageResult.Failure.FileTooLarge    ->
             showError("Max upload size is ${r.limitBytes / 1024 / 1024} MB.")
+        is SendMessageResult.Failure.InvalidResponse -> Unit
         is SendMessageResult.Failure.Unknown         -> showError(r.message)
     }
 }
@@ -208,7 +210,10 @@ Updates are conflated by the SDK (rapid successive states collapse into the late
 
 ```kotlin
 sealed class MessageValue {
-    data class TextValue(val value: String) : MessageValue()
+    data class TextValue(
+        val value: String,
+        val attachmentMessageIds: List<String> = emptyList(),
+    ) : MessageValue()
     data class FileValue(val fileLink: FileLink) : MessageValue()
     data class LocationValue(
         val latitude: Float,
@@ -217,8 +222,15 @@ sealed class MessageValue {
     ) : MessageValue()
     data class KnockValue(val hotKnock: Boolean) : MessageValue()
     data class SystemValue(val event: SystemEvent) : MessageValue()
+    data class RequestValue(val request: Request) : MessageValue()
+    data class ResponseValue(val requestMessageId: String, val response: Response) : MessageValue()
+    data class UnsupportedValue(val protocolVersion: Int?, val type: String?) : MessageValue()
 }
 ```
+
+`RequestValue`, `ResponseValue` and `UnsupportedValue` are structured messages — see
+[requests.md](./requests.md). Text messages are sent as a JSON envelope on the wire; incoming text
+that is not such an envelope is still delivered as a plain `TextValue`.
 
 A render-side `when`:
 
@@ -231,6 +243,9 @@ fun MessageBubble(msg: ChatMessage) {
         is MessageValue.LocationValue -> LocationCard(v.latitude, v.longitude, v.name)
         is MessageValue.KnockValue    -> KnockBubble(hot = v.hotKnock)
         is MessageValue.SystemValue   -> SystemEventRow(msg.systemText ?: "")
+        is MessageValue.RequestValue  -> RequestCard(msg, v.request, answered = msg.answeredByMessageId != null)
+        is MessageValue.ResponseValue -> ResponseBubble(v.response)
+        is MessageValue.UnsupportedValue -> Text("Please update the app to see this message.")
     }
 }
 ```

@@ -73,14 +73,21 @@ internal class ConversationManagerImpl(private val sessionScope: UserSessionScop
         }
     }
 
-    override suspend fun createConversation(title: String): CreateConversationResult {
+    override suspend fun createConversation(
+        title: String,
+        metadata: Map<String, String>,
+    ): CreateConversationResult {
+        val name = ConversationName.encode(title, metadata)
+        if (name.length > ConversationName.MAX_LENGTH) {
+            return CreateConversationResult.Failure.InvalidTitle(NAME_TOO_LONG)
+        }
         return try {
             val defaultProtocol = sessionScope.getDefaultProtocol()
             val convProtocol = CreateConversationParam.Protocol
                 .fromSupportedProtocolToConversationOptionsProtocol(defaultProtocol)
 
             val result = sessionScope.conversations.createRegularGroup(
-                name = title,
+                name = name,
                 userIdList = emptyList(),
                 options = CreateConversationParam(
                     protocol = convProtocol,

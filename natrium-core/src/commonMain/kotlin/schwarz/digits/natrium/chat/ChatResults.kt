@@ -24,6 +24,7 @@ sealed class SendMessageResult {
         data object DisabledByTeam : Failure()
         data object RestrictedFileType : Failure()
         data class FileTooLarge(val fileSizeBytes: Long, val limitBytes: Long) : Failure()
+        data class InvalidResponse(val reason: InvalidResponseReason) : Failure()
         data class Unknown(val message: String, val cause: Throwable? = null) : Failure()
     }
 }

@@ -18,6 +18,8 @@
 package schwarz.digits.natrium.session
 
 import schwarz.digits.natrium.Cancellable
+import schwarz.digits.natrium.caselink.CaseLink
+import schwarz.digits.natrium.caselink.GenerateCaseLinkResult
 import schwarz.digits.natrium.conversation.ConversationManager
 import schwarz.digits.natrium.devices.DeviceManager
 
@@ -27,8 +29,23 @@ interface Session {
 
     suspend fun sessionInfo(): SessionInfo?
     fun observeSessionInfo(listener: (SessionInfo) -> Unit): Cancellable
+
+    /**
+     * Called once newer content than this version can read has arrived, and again whenever an even
+     * newer version shows up; a listener added later gets the current state at once. Use it to ask
+     * the user to update the app — once, rather than at every
+     * [schwarz.digits.natrium.chat.MessageValue.UnsupportedValue].
+     */
+    fun observeUpdateRecommended(listener: (UpdateRecommended) -> Unit): Cancellable
     suspend fun updateDisplayName(name: String): UpdateDisplayNameResult
     suspend fun updateHandle(handle: String): UpdateHandleResult
     suspend fun updateEmail(email: String): UpdateEmailResult
     suspend fun logout(): LogoutResult
+
+    /**
+     * Generates a case link for this user under [schwarz.digits.natrium.BackendConfig.caseLinkBase]
+     * that carries [ref] as [CaseLink.ref]. The app chooses the ref and keeps it unique: the same
+     * ref always yields the same link, and the receiving side treats it as the same case.
+     */
+    suspend fun generateCaseLink(ref: String): GenerateCaseLinkResult
 }

@@ -34,6 +34,7 @@ All public types are in the `schwarz.digits.natrium` package namespace.
 | `blackList` | `String` | — |
 | `website` | `String` | — |
 | `isOnPremises` | `Boolean` | `true` |
+| `caseLinkBase` | `String?` | `null` — base URL of case links, see [case-links.md](./case-links.md) |
 
 SDK consumers construct a `BackendConfig` with their server URLs and pass it to `Natrium.initialize()`.
 
@@ -62,10 +63,12 @@ Observe via `Natrium.observeAuthEvents(listener)`. Emitted on login and logout e
 | `val deviceManager` | `DeviceManager` |
 | `suspend fun sessionInfo()` | `SessionInfo?` |
 | `fun observeSessionInfo(listener)` | `listener: (SessionInfo) -> Unit` → `Cancellable` |
+| `fun observeUpdateRecommended(listener)` | `listener: (UpdateRecommended) -> Unit` → `Cancellable` — newer protocol content arrived ([requests.md 4](./requests.md#4-versioning-strategy)); replays the current state |
 | `suspend fun updateDisplayName(name: String)` | `UpdateDisplayNameResult` |
 | `suspend fun updateHandle(handle: String)` | `UpdateHandleResult` |
 | `suspend fun updateEmail(email: String)` | `UpdateEmailResult` |
 | `suspend fun logout()` | `LogoutResult` |
+| `suspend fun generateCaseLink(ref: String)` | `GenerateCaseLinkResult` — `Success(CaseLink(url, ref))`, `Failure.NotConfigured`, `Failure.InvalidRef`, `Failure.NotLoggedIn`, `Failure.Unknown` |
 
 ---
 
@@ -78,7 +81,7 @@ Observe via `Natrium.observeAuthEvents(listener)`. Emitted on login and logout e
 | `fun observeConversations(listener)` | `listener: (Collection<ConversationOperations>) -> Unit` | `Cancellable` |
 | `suspend fun listConversations()` | — | `ConversationListResult` |
 | `suspend fun findConversation(id)` | `id: ConversationId` | `FindConversationResult` |
-| `suspend fun createConversation(title)` | `title: String` | `CreateConversationResult` |
+| `suspend fun createConversation(title, metadata)` | `title: String`, `metadata: Map<String, String> = emptyMap()` | `CreateConversationResult` |
 | `suspend fun joinConversation(joinLink, password?)` | `joinLink: JoinLink`, `password: String? = null` | `JoinConversationResult` |
 
 ---
@@ -96,7 +99,8 @@ Observe via `Natrium.observeAuthEvents(listener)`. Emitted on login and logout e
 | `suspend fun getJoinLink(password?)` | `password: String? = null` | `GetJoinLinkResult` |
 | `suspend fun revokeJoinLink()` | — | `RevokeJoinLinkResult` |
 | `suspend fun getConversationInfo()` | — | `GetConversationInfoResult` |
-| `suspend fun setTitle(title)` | `title: String` | `SetTitleResult` |
+| `suspend fun setTitle(title)` | `title: String` (metadata is kept) | `SetTitleResult` |
+| `suspend fun setMetadata(metadata)` | `metadata: Map<String, String>` (title is kept) | `SetTitleResult` |
 | `suspend fun delete()` | — | `DeleteConversationResult` |
 
 ---
@@ -109,6 +113,8 @@ Observe via `Natrium.observeAuthEvents(listener)`. Emitted on login and logout e
 |--------|-----------|---------|
 | `suspend fun sendMessage(value)` | `value: MessageValue` | `SendMessageResult` |
 | `suspend fun sendReply(value, quotedMessageId)` | `value: MessageValue`, `quotedMessageId: String` | `SendMessageResult` |
+| `suspend fun sendResponse(requestMessageId, response, attachments)` | `requestMessageId: String`, `response: Response`, `attachments: List<FileLink> = emptyList()` | `SendMessageResult` |
+| `suspend fun sendText(text, attachments)` | `text: String`, `attachments: List<FileLink> = emptyList()` | `SendMessageResult` |
 | `suspend fun downloadFile(messageId)` | `messageId: String` | `FileDownloadResult` |
 | `suspend fun toggleReaction(messageId, emoji)` | `messageId: String`, `emoji: String` | `ToggleReactionResult` |
 | `fun observeMessages(listener)` | `listener: (Collection<ChatMessage>) -> Unit` | `Cancellable` |
@@ -223,17 +229,51 @@ Values: `PENDING`, `APPROVED`, `REJECTED`
 | `systemText` | `String?` |
 | `reactions` | `Map<String, ReactionInfo>` |
 | `quotedMessage` | `QuotedMessage?` |
+| `answeredByMessageId` | `String?` (only on `RequestValue` messages) |
 
 ### MessageValue
 `sealed class schwarz.digits.natrium.chat.MessageValue`
 
 | Subclass | Fields |
 |----------|--------|
-| `TextValue` | `value: String` |
+| `TextValue` | `value: String`, `attachmentMessageIds: List<String>` |
 | `FileValue` | `fileLink: FileLink` |
 | `LocationValue` | `latitude: Float`, `longitude: Float`, `name: String?` |
 | `KnockValue` | `hotKnock: Boolean` |
 | `SystemValue` | `event: SystemEvent` |
+| `RequestValue` | `request: Request` |
+| `ResponseValue` | `requestMessageId: String`, `response: Response` |
+| `UnsupportedValue` | `protocolVersion: Int?`, `type: String?` |
+
+`data class UpdateRecommended(supportedVersion: Int, highestSeenVersion: Int)` — see `Session.observeUpdateRecommended`.
+
+### Request
+`sealed class schwarz.digits.natrium.chat.Request` — common fields `subject: String`, `message: String`, `deadline: Instant?`
+
+| Subclass | Additional fields |
+|----------|--------|
+| `SingleSelect` | `options: List<Option>` |
+| `MultiSelect` | `options: List<Option>`, `minSelections: Int?`, `maxSelections: Int?` |
+| `Asset` | — |
+| `Appointment` | `from: Instant`, `to: Instant` |
+
+`data class Option(id: String, title: String)`
+
+### Response
+`sealed class schwarz.digits.natrium.chat.Response`
+
+| Subclass | Fields |
+|----------|--------|
+| `SingleSelect` | `selectedOptionId: String` |
+| `MultiSelect` | `selectedOptionIds: List<String>` |
+| `Asset` | `attachmentMessageIds: List<String>` |
+| `Appointment` | `accepted: Boolean` |
+| `FreeText` | `text: String`, `attachmentMessageIds: List<String>` |
+
+### InvalidResponseReason
+`enum schwarz.digits.natrium.chat.InvalidResponseReason`
+
+Values: `REQUEST_NOT_FOUND`, `NOT_A_REQUEST`, `ALREADY_ANSWERED`, `TYPE_MISMATCH`, `UNKNOWN_OPTION`, `EMPTY_SELECTION`, `SELECTION_OUT_OF_RANGE`, `MISSING_ATTACHMENTS`, `TEXT_TOO_LONG`
 
 ### SystemEvent
 `enum schwarz.digits.natrium.chat.SystemEvent`
@@ -369,7 +409,7 @@ All result types are sealed classes following the pattern `Success` / `Failure.*
 | `GetMembersResult` | `Success(members: List<ConversationMember>)` | `Failure.NotLoggedIn`, `Failure.Unknown(message, cause?)` |
 | `GetJoinLinkResult` | `Success(joinLink: JoinLink)` | `Failure.NotLoggedIn`, `Failure.Unknown(message, cause?)` |
 | `RevokeJoinLinkResult` | `Success` | `Failure.NotLoggedIn`, `Failure.Unknown(message, cause?)` |
-| `SendMessageResult` | `Success` | `Failure.NotLoggedIn`, `Failure.DisabledByTeam`, `Failure.RestrictedFileType`, `Failure.FileTooLarge(fileSizeBytes: Long, limitBytes: Long)`, `Failure.Unknown(message, cause?)` |
+| `SendMessageResult` | `Success` | `Failure.NotLoggedIn`, `Failure.DisabledByTeam`, `Failure.RestrictedFileType`, `Failure.FileTooLarge(fileSizeBytes: Long, limitBytes: Long)`, `Failure.InvalidResponse(reason: InvalidResponseReason)`, `Failure.Unknown(message, cause?)` |
 | `ChatHistoryResult` | `Success(messages: List<ChatMessage>)` | `Failure.NotLoggedIn`, `Failure.Unknown(message, cause?)` |
 | `FileDownloadResult` | `Success(filePath: Path)` | `Failure.NotLoggedIn`, `Failure.Unknown(message, cause?)` |
 | `ToggleReactionResult` | `Success` | `Failure.Unknown` |

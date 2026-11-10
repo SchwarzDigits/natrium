@@ -122,7 +122,7 @@ session.conversationManager.joinConversation(link, password = "swordfish")
 | Group | Methods |
 |---|---|
 | Messaging | `chat(): ChatOperations` — see [messaging.md](./messaging.md) |
-| Metadata  | `getConversationInfo()`, `setTitle(title)` |
+| Metadata  | `getConversationInfo()`, `setTitle(title)`, `setMetadata(metadata)` |
 | Members   | `getMembers()`, `addMember(userId)`, `removeMember(userId)` |
 | Sharing   | `getJoinLink(password?)`, `revokeJoinLink()` |
 | Lifecycle | `delete()` |
@@ -131,7 +131,7 @@ session.conversationManager.joinConversation(link, password = "swordfish")
 
 ```kotlin
 val info = (ops.getConversationInfo() as? GetConversationInfoResult.Success)?.conversationInfo
-// ConversationInfo(id, title)
+// ConversationInfo(id, title, metadata)
 
 when (val r = ops.setTitle("New Title")) {
     SetTitleResult.Success              -> Unit
@@ -141,6 +141,30 @@ when (val r = ops.setTitle("New Title")) {
 ```
 
 `getConversationInfo` failure branches are `NotLoggedIn` and `Unknown(message, cause)`.
+
+**App metadata.** A conversation can carry app-defined string key/value pairs next to its title —
+e.g. a reference to a record in another system that the app uses to find the conversation again.
+Natrium stores them, returns them in `ConversationInfo.metadata` and does not interpret them.
+
+```kotlin
+session.conversationManager.createConversation("Building authority · BA-2026-0412", mapOf("case_number" to "BA-2026-0412"))
+ops.setMetadata(info.metadata + ("ref" to "a1b2"))   // keeps the title
+ops.setTitle("Renamed")                              // keeps the metadata
+```
+
+Wire has a single conversation name field, so title and metadata share it. Without metadata the
+name is the plain title (other clients and older conversations read as before). With metadata it is
+a JSON envelope; `title` is omitted when empty, `meta` holds string values only:
+
+```json
+{"natrium":1,"title":"Building authority · BA-2026-0412","meta":{"case_number":"BA-2026-0412"}}
+```
+
+A name that is not such an envelope (plain text, other JSON, a newer `natrium` version) reads as a
+plain title with empty metadata. Encoded title and metadata must fit Wire's 256-character name;
+longer ones fail with `CreateConversationResult.Failure.InvalidTitle` /
+`SetTitleResult.Failure.Unknown`. Other Wire clients show the raw envelope as the name.
+Every participant can read and change it — do not put anything secret in metadata.
 
 ### 6b. Members
 
