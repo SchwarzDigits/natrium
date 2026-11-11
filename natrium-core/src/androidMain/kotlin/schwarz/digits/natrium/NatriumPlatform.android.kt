@@ -47,7 +47,8 @@ actual class NatriumPlatform(private val context: Context) {
             appContext = context,
             rootPath = rootPath,
             kaliumConfigs = KaliumConfigs(
-                shouldEncryptData = { false }
+                shouldEncryptData = { false },
+                enableCalling = false
             )
         )
     }
