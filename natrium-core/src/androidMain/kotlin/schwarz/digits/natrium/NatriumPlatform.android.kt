@@ -47,7 +47,9 @@ actual class NatriumPlatform(private val context: Context) {
             appContext = context,
             rootPath = rootPath,
             kaliumConfigs = KaliumConfigs(
-                shouldEncryptData = { false }
+                shouldEncryptData = { false },
+                // Natrium has no calling: without it Kalium never loads libavs.so, so hosts can drop com.wire:avs.
+                enableCalling = false
             )
         )
     }
