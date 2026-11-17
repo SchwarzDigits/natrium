@@ -116,7 +116,12 @@ Reported to the backend as `Natrium/<version> (iOS)`.
 ### Module setup
 
 ```kotlin
-repositories { mavenCentral() }
+repositories {
+    mavenCentral()
+    maven("https://natrium-repository.object.storage.eu01.onstackit.cloud") {
+        content { includeGroup("schwarz.opensource.natrium") }
+    }
+}
 
 dependencies {
     implementation("schwarz.opensource.natrium:natrium-core:0.0.1")

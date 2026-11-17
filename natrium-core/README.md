@@ -4,10 +4,15 @@ Kotlin Multiplatform library that wraps Wire's [Kalium](https://github.com/wirea
 
 ## Install
 
-`natrium-core` is published to **Maven Central** — no extra repository declaration required.
+`natrium-core` is published to **Maven Central**. The Kalium SDK it depends on (`schwarz.opensource.natrium:logic`) is in the fork's own Maven repository, which has to be declared as well.
 
 ```kotlin
-repositories { mavenCentral() }
+repositories {
+    mavenCentral()
+    maven("https://natrium-repository.object.storage.eu01.onstackit.cloud") {
+        content { includeGroup("schwarz.opensource.natrium") }
+    }
+}
 
 dependencies {
     implementation("schwarz.opensource.natrium:natrium-core:0.0.1")
