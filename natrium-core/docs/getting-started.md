@@ -12,13 +12,16 @@ This guide walks you from an empty project to a first successful login against y
 
 ## Add the dependency
 
-`natrium-core` is published to **Maven Central**, so no extra repository declaration is required.
+`natrium-core` is published to **Maven Central**. The Kalium SDK it depends on (`schwarz.opensource.natrium:logic`) is in the fork's own Maven repository, which has to be declared as well.
 
 In your KMP module's `build.gradle.kts`:
 
 ```kotlin
 repositories {
     mavenCentral()
+    maven("https://natrium-repository.object.storage.eu01.onstackit.cloud") {
+        content { includeGroup("schwarz.opensource.natrium") }
+    }
 }
 
 kotlin {

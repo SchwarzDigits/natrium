@@ -28,6 +28,10 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         maven(url = "https://s01.oss.sonatype.org/content/repositories/snapshots")
+        // Kalium (schwarz.opensource.natrium:logic) from 0.0.7-digits.4 on is only in the fork's Maven repository.
+        maven("https://natrium-repository.object.storage.eu01.onstackit.cloud") {
+            content { includeGroup("schwarz.opensource.natrium") }
+        }
     }
 }
 
